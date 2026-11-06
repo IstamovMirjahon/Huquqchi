@@ -22,7 +22,22 @@ public sealed class TelegramOtpWorker(
             Timeout = TimeSpan.FromSeconds(40)
         };
 
-        await EnsureBotIsAvailableAsync(stoppingToken);
+        try
+        {
+            await EnsureBotIsAvailableAsync(stoppingToken);
+        }
+        catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+        {
+            return;
+        }
+        catch
+        {
+            // The Telegram Bot API token is part of the request URL. Do not attach the
+            // original HTTP exception to logs because it may disclose that credential.
+            throw new InvalidOperationException(
+                "Telegram bot ishga tusha olmadi. Bot tokeni va tarmoq ulanishini tekshiring.");
+        }
+
         logger.LogInformation("Huquqchi Telegram OTP bot ishga tushdi.");
 
         while (!stoppingToken.IsCancellationRequested)
@@ -35,9 +50,10 @@ public sealed class TelegramOtpWorker(
             {
                 break;
             }
-            catch (Exception exception)
+            catch (Exception)
             {
-                logger.LogError(exception, "Telegram update olishda xatolik.");
+                // HTTP exceptions can include a request URL containing the bot token.
+                logger.LogError("Telegram update olishda xatolik. 5 soniyadan keyin qayta uriniladi.");
                 await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
             }
         }
