@@ -76,6 +76,25 @@ public sealed class OtpServiceTests
     }
 }
 
+public sealed class TelegramAccountServiceTests
+{
+    [Fact]
+    public async Task Contact_is_linked_once_and_reused_for_later_codes()
+    {
+        var service = new TelegramAccountService(new TestUnitOfWork());
+
+        var first = await service.LinkAsync(1001, "+998901234567", default);
+        var repeated = await service.LinkAsync(1001, "+998909999999", default);
+        var otherAccount = await service.LinkAsync(2002, "+998901234567", default);
+
+        Assert.True(first.IsSuccess);
+        Assert.Equal("+998901234567", repeated.Value);
+        Assert.Equal("+998901234567", await service.GetPhoneAsync(1001, default));
+        Assert.True(otherAccount.IsFailure);
+        Assert.Equal("auth.phone_already_linked", otherAccount.Error.Code);
+    }
+}
+
 public sealed class ApiTests(TestApiFactory factory) : IClassFixture<TestApiFactory>
 {
     [Fact]
@@ -83,7 +102,12 @@ public sealed class ApiTests(TestApiFactory factory) : IClassFixture<TestApiFact
     {
         var client = factory.CreateClient();
         Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/health")).StatusCode);
-        Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/swagger/v1/swagger.json")).StatusCode);
+        var swaggerResponse = await client.GetAsync("/swagger/v1/swagger.json");
+        Assert.Equal(HttpStatusCode.OK, swaggerResponse.StatusCode);
+        using var swagger = JsonDocument.Parse(await swaggerResponse.Content.ReadAsStringAsync());
+        var security = swagger.RootElement.GetProperty("security");
+        Assert.True(security.GetArrayLength() > 0);
+        Assert.True(security[0].TryGetProperty("Bearer", out _));
     }
 
     [Fact]
@@ -98,6 +122,16 @@ public sealed class ApiTests(TestApiFactory factory) : IClassFixture<TestApiFact
 
         var profile = await client.GetAsync("/api/v1/profile");
         profile.EnsureSuccessStatusCode();
+
+        Assert.False(string.IsNullOrWhiteSpace(auth.RefreshToken));
+        var refreshResponse = await client.PostAsJsonAsync("/api/v1/auth/refresh",
+            new { refreshToken = auth.RefreshToken });
+        refreshResponse.EnsureSuccessStatusCode();
+        var refreshed = await refreshResponse.Content.ReadFromJsonAsync<AuthResponse>();
+        Assert.NotNull(refreshed);
+        Assert.NotEqual(auth.RefreshToken, refreshed.RefreshToken);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", refreshed.AccessToken);
+        (await client.GetAsync("/api/v1/profile")).EnsureSuccessStatusCode();
 
         using var form = new MultipartFormDataContent();
         form.Add(new ByteArrayContent("test pdf content"u8.ToArray()) { Headers = { ContentType = new MediaTypeHeaderValue("application/pdf") } }, "file", "contract.pdf");
@@ -127,6 +161,12 @@ public sealed class ApiTests(TestApiFactory factory) : IClassFixture<TestApiFact
         var secondAuth = await secondVerify.Content.ReadFromJsonAsync<AuthResponse>();
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", secondAuth!.AccessToken);
         Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync($"/api/v1/documents/{documentId}")).StatusCode);
+
+        var logout = await client.PostAsJsonAsync("/api/v1/auth/logout",
+            new { refreshToken = refreshed.RefreshToken });
+        Assert.Equal(HttpStatusCode.NoContent, logout.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await client.PostAsJsonAsync("/api/v1/auth/refresh",
+            new { refreshToken = refreshed.RefreshToken })).StatusCode);
     }
 }
 

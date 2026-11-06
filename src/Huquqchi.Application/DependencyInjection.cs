@@ -6,6 +6,7 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddApplication(this IServiceCollection services) => services
         .AddScoped<IAuthService, AuthService>()
+        .AddScoped<ITelegramAccountService, TelegramAccountService>()
         .AddScoped<IProfileService, ProfileService>()
         .AddScoped<IDocumentService, DocumentService>()
         .AddScoped<IConversationService, ConversationService>()

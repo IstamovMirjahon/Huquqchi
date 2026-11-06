@@ -1,3 +1,4 @@
+using Huquqchi.Application;
 using Huquqchi.Infrastructure;
 using Huquqchi.TelegramBot;
 
@@ -11,6 +12,7 @@ var otpHashKey = builder.Configuration["Otp:HashKey"];
 if (string.IsNullOrWhiteSpace(otpHashKey) || otpHashKey.Length < 32)
     throw new InvalidOperationException("Otp:HashKey kamida 32 belgidan iborat bo‘lishi kerak.");
 
+builder.Services.AddApplication();
 builder.Services.AddPersistence(builder.Configuration);
 builder.Services.AddHostedService<TelegramOtpWorker>();
 

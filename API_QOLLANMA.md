@@ -8,11 +8,11 @@ Asosiy manba: `Huquqchi_Funksional_Topshiriq_va_Dizayn.md`
 
 Backendning Clean Architecture asosidagi MVP API qismi ishlaydi: autentifikatsiya, profil, suhbatlar, hujjat ombori, tahlil so‘rovlari, qonunlar katalogi, shablonlar va hujjat loyihalari mavjud.
 
-Funksional topshiriqdagi barcha mahsulot funksiyalari hali tugallanmagan. Telegram orqali xavfsiz OTP mavjud; SMS, email, AI/RAG, OCR, vektor qidiruv, DOCX/PDF eksport, bildirishnomalar, obuna/to‘lov, aktiv sessiyalar, hisobni o‘chirish va administrator API’lari keyingi implementatsiyani talab qiladi.
+Funksional topshiriqdagi barcha mahsulot funksiyalari hali tugallanmagan. Telegram orqali xavfsiz OTP va aylantiriladigan refresh token mavjud; SMS, email, AI/RAG, OCR, vektor qidiruv, DOCX/PDF eksport, bildirishnomalar, obuna/to‘lov, aktiv sessiyalar ro‘yxati, hisobni o‘chirish va administrator API’lari keyingi implementatsiyani talab qiladi.
 
-Hozir backend jami 23 ta HTTP endpoint beradi:
+Hozir backend jami 25 ta HTTP endpoint beradi:
 
-- 2 ta autentifikatsiya endpointi;
+- 4 ta autentifikatsiya endpointi;
 - 2 ta profil endpointi;
 - 5 ta suhbat endpointi;
 - 8 ta hujjat va tahlil endpointi;
@@ -47,16 +47,16 @@ OTP statik emas. Telegram bot foydalanuvchining o‘z kontaktiga bog‘langan 6 
 Token olish tartibi:
 
 1. `POST /api/v1/auth/request-code` orqali Telegram bot havolasi olinadi.
-2. Botda `/start` bosilib, foydalanuvchining o‘z telefon kontakti yuboriladi.
+2. Botda `/start` bosilib, foydalanuvchining o‘z telefon kontakti faqat birinchi marta yuboriladi. Telegram akkaunti keyingi kodlar uchun shu telefonga bog‘lanadi.
 3. Bot yuborgan 6 xonali kod `POST /api/v1/auth/verify` orqali tasdiqlanadi.
-4. Javobdagi `accessToken` olinadi.
+4. Javobdagi 15 daqiqalik `accessToken` va 30 kunlik `refreshToken` olinadi.
 5. Keyingi so‘rovlarga quyidagi header qo‘shiladi:
 
 ```http
 Authorization: Bearer ACCESS_TOKEN
 ```
 
-Swagger’da yuqoridagi `Authorize` tugmasi orqali token kiritiladi.
+Swagger’da yuqoridagi `Authorize` tugmasiga faqat `accessToken` qiymati kiritiladi. Mobil ilova access token tugaganda `POST /api/v1/auth/refresh` orqali yangi token juftligini oladi va eski refresh tokenni qayta ishlatmaydi.
 
 JWT ichida backend foydalanadigan asosiy claimlar:
 
@@ -102,6 +102,8 @@ Frontend foydalanuvchiga `detail` matnini ko‘rsatishi mumkin, dasturiy qarorla
 | `GET` | `/health` | Yo‘q | API va PostgreSQL holatini tekshirish | Docker, CI/CD, server monitoring |
 | `POST` | `/api/v1/auth/request-code` | Yo‘q | Telegram OTP bot havolasini olish | Kirish ekrani |
 | `POST` | `/api/v1/auth/verify` | Yo‘q | OTP’ni tekshirish va JWT olish | Kod tasdiqlash/ro‘yxatdan o‘tish |
+| `POST` | `/api/v1/auth/refresh` | Yo‘q | Access va refresh tokenlarni xavfsiz aylantirish | Fon rejimida sessiyani yangilash |
+| `POST` | `/api/v1/auth/logout` | Yo‘q | Refresh tokenni bekor qilish | Hisobdan chiqish |
 | `GET` | `/api/v1/profile` | Ha | Joriy profil va workspace’ni olish | Profil, Home salomlashuvi |
 | `PATCH` | `/api/v1/profile` | Ha | Ism va tilni yangilash | Profil sozlamalari |
 | `GET` | `/api/v1/conversations` | Ha | Suhbatlar tarixini olish | Chat tarixi, Home so‘nggi suhbatlar |
@@ -162,7 +164,7 @@ Javob: `202 Accepted`.
 }
 ```
 
-Bot `/start` buyrug‘idan keyin kontakt yuborish tugmasini ko‘rsatadi. Faqat Telegram foydalanuvchisining o‘z kontakti qabul qilinadi. Kod hash ko‘rinishida PostgreSQL’da saqlanadi, 5 daqiqa amal qiladi, 5 ta noto‘g‘ri urinishdan keyin bloklanadi va muvaffaqiyatli kirishdan keyin qayta ishlatilmaydi.
+Bot `/start` buyrug‘idan keyin kontakt yuborish tugmasini faqat bog‘lanmagan Telegram akkauntiga ko‘rsatadi. Faqat foydalanuvchining o‘z kontakti qabul qilinadi. Bog‘lanish PostgreSQL’da saqlanadi va keyingi `/start` buyrug‘ida telefon qayta so‘ralmaydi. Kod hash ko‘rinishida saqlanadi, 5 daqiqa amal qiladi, 5 ta noto‘g‘ri urinishdan keyin bloklanadi va muvaffaqiyatli kirishdan keyin qayta ishlatilmaydi.
 
 Asosiy xato kodi: `auth.invalid_phone`.
 
@@ -188,6 +190,9 @@ Javob: `200 OK`.
 ```json
 {
   "accessToken": "eyJ...",
+  "accessTokenExpiresAt": "2026-11-06T12:00:00Z",
+  "refreshToken": "random-opaque-token",
+  "refreshTokenExpiresAt": "2026-12-06T11:45:00Z",
   "userId": "00000000-0000-0000-0000-000000000000",
   "workspaceId": "00000000-0000-0000-0000-000000000000",
   "role": "Owner"
@@ -195,6 +200,18 @@ Javob: `200 OK`.
 ```
 
 Asosiy xato kodlari: `auth.invalid_phone`, `auth.invalid_code`, `auth.code_rate_limited`.
+
+### `POST /api/v1/auth/refresh`
+
+Muddati tugagan access token o‘rniga yangi access va refresh token juftligini beradi. Har bir muvaffaqiyatli chaqiruvdan keyin eski refresh token bekor qilinadi. Eski token qayta ishlatilsa, shu token oilasidagi faol sessiya ham xavfsizlik uchun bekor qilinadi.
+
+```json
+{ "refreshToken": "random-opaque-token" }
+```
+
+### `POST /api/v1/auth/logout`
+
+Berilgan refresh tokenni bekor qiladi. Muvaffaqiyatli javob: `204 No Content`.
 
 ## 8. Profile API
 
@@ -564,7 +581,6 @@ Quyidagi imkoniyatlar funksional topshiriqda bor, lekin joriy backendda endpoint
 ### Auth va account
 
 - SMS yoki email orqali OTP yuborish;
-- refresh token;
 - hisobni tiklash;
 - aktiv sessiyalar va barcha qurilmalardan chiqish;
 - consent endpointlari;
@@ -626,7 +642,7 @@ Quyidagi imkoniyatlar funksional topshiriqda bor, lekin joriy backendda endpoint
 |---|---|---|
 | Clean Architecture va DDD qatlamlari | Tayyor | Domain, Application, Infrastructure, API ajratilgan |
 | PostgreSQL va EF Core | Tayyor | Configurations, migration va index/FK’lar mavjud |
-| JWT auth va Telegram OTP | MVP tayyor | 5 daqiqalik, bir martalik kod bor; refresh token hali yo‘q |
+| JWT auth va Telegram OTP | Tayyor | 5 daqiqalik OTP, 15 daqiqalik access token, 30 kunlik aylantiriladigan refresh token va bir martalik kontakt bog‘lash bor |
 | Workspace isolation | Tayyor | Hujjat va chatlar workspace bo‘yicha tekshiriladi |
 | Hujjat ombori | MVP tayyor | Upload, list, search, rename, tags, download, soft-delete |
 | AI hujjat tahlili | Skelet | History/status ishlaydi, real OCR/AI yo‘q |

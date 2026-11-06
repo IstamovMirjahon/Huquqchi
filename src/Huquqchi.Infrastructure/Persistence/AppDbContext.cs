@@ -24,6 +24,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<Consent> Consents => Set<Consent>();
     public DbSet<AuditEvent> AuditEvents => Set<AuditEvent>();
     public DbSet<OtpChallenge> OtpChallenges => Set<OtpChallenge>();
+    public DbSet<RefreshSession> RefreshSessions => Set<RefreshSession>();
+    public DbSet<TelegramAccount> TelegramAccounts => Set<TelegramAccount>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

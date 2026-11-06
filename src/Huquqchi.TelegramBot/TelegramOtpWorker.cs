@@ -102,6 +102,7 @@ public sealed class TelegramOtpWorker(
             var text = textElement.GetString()?.Trim();
             if (text is "/start" or "/help")
             {
+                if (await TryIssueForLinkedAccountAsync(chatId, senderId, cancellationToken)) return;
                 await SendContactRequestAsync(chatId, cancellationToken);
                 return;
             }
@@ -130,8 +131,34 @@ public sealed class TelegramOtpWorker(
         }
 
         using var scope = scopeFactory.CreateScope();
+        var accounts = scope.ServiceProvider.GetRequiredService<ITelegramAccountService>();
+        var linked = await accounts.LinkAsync(senderId, phone, cancellationToken);
+        if (linked.IsFailure)
+        {
+            await SendMessageAsync(chatId, linked.Error.Message, cancellationToken);
+            return;
+        }
+
+        await IssueCodeAsync(scope, chatId, senderId, linked.Value, cancellationToken);
+    }
+
+    private async Task<bool> TryIssueForLinkedAccountAsync(long chatId, long senderId,
+        CancellationToken cancellationToken)
+    {
+        using var scope = scopeFactory.CreateScope();
+        var accounts = scope.ServiceProvider.GetRequiredService<ITelegramAccountService>();
+        var phone = await accounts.GetPhoneAsync(senderId, cancellationToken);
+        if (phone is null) return false;
+        await IssueCodeAsync(scope, chatId, senderId, phone, cancellationToken);
+        return true;
+    }
+
+    private async Task IssueCodeAsync(IServiceScope scope, long chatId, long senderId, string phone,
+        CancellationToken cancellationToken)
+    {
         var otpService = scope.ServiceProvider.GetRequiredService<IOneTimeCodeService>();
-        var result = await otpService.IssueAsync(phone, OtpDeliveryChannel.Telegram, senderId, cancellationToken);
+        var result = await otpService.IssueAsync(phone, OtpDeliveryChannel.Telegram, senderId,
+            cancellationToken);
         if (result.IsFailure)
         {
             await SendMessageAsync(chatId, result.Error.Message, cancellationToken);

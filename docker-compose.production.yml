@@ -25,6 +25,8 @@ services:
       Jwt__Issuer: ${JWT_ISSUER:-huquqchi}
       Jwt__Audience: ${JWT_AUDIENCE:-huquqchi-mobile}
       Jwt__Key: ${JWT_KEY:?JWT_KEY is required}
+      Jwt__AccessTokenMinutes: ${JWT_ACCESS_TOKEN_MINUTES:-15}
+      Jwt__RefreshTokenDays: ${JWT_REFRESH_TOKEN_DAYS:-30}
       Otp__HashKey: ${OTP_HASH_KEY:?OTP_HASH_KEY is required}
       Telegram__BotUrl: ${TELEGRAM_BOT_URL:?TELEGRAM_BOT_URL is required}
       Storage__Path: /app/storage

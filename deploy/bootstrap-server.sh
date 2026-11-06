@@ -19,6 +19,8 @@ if [[ ! -f .env ]]; then
     'JWT_ISSUER=huquqchi' \
     'JWT_AUDIENCE=huquqchi-mobile' \
     "JWT_KEY=$jwt_key" \
+    'JWT_ACCESS_TOKEN_MINUTES=15' \
+    'JWT_REFRESH_TOKEN_DAYS=30' \
     "OTP_HASH_KEY=$otp_hash_key" \
     'TELEGRAM_BOT_TOKEN=replace-with-botfather-token' \
     'TELEGRAM_BOT_URL=https://t.me/replace_with_bot_username' \

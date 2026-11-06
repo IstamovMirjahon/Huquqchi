@@ -6,9 +6,9 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace Huquqchi.Infrastructure;
 
-public sealed class JwtTokenService(string issuer, string audience, string key) : ITokenService
+public sealed class JwtTokenService(string issuer, string audience, string key, TimeSpan lifetime) : ITokenService
 {
-    public string Create(Guid userId, Guid workspaceId, string role)
+    public IssuedAccessToken Create(Guid userId, Guid workspaceId, string role)
     {
         var claims = new[]
         {
@@ -18,7 +18,9 @@ public sealed class JwtTokenService(string issuer, string audience, string key) 
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
         var credentials = new SigningCredentials(new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)), SecurityAlgorithms.HmacSha256);
-        var token = new JwtSecurityToken(issuer, audience, claims, expires: DateTime.UtcNow.AddHours(8), signingCredentials: credentials);
-        return new JwtSecurityTokenHandler().WriteToken(token);
+        var expiresAt = DateTimeOffset.UtcNow.Add(lifetime);
+        var token = new JwtSecurityToken(issuer, audience, claims, expires: expiresAt.UtcDateTime,
+            signingCredentials: credentials);
+        return new IssuedAccessToken(new JwtSecurityTokenHandler().WriteToken(token), expiresAt);
     }
 }

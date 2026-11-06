@@ -15,7 +15,15 @@ public static class DependencyInjection
         string jwtKey)
     {
         services.AddPersistence(configuration);
-        services.AddSingleton<ITokenService>(new JwtTokenService(jwtIssuer, jwtAudience, jwtKey));
+        var accessTokenMinutes = int.TryParse(configuration["Jwt:AccessTokenMinutes"], out var configuredMinutes)
+            ? Math.Clamp(configuredMinutes, 5, 60)
+            : 15;
+        var refreshTokenDays = int.TryParse(configuration["Jwt:RefreshTokenDays"], out var configuredDays)
+            ? Math.Clamp(configuredDays, 1, 90)
+            : 30;
+        services.AddSingleton<ITokenService>(new JwtTokenService(
+            jwtIssuer, jwtAudience, jwtKey, TimeSpan.FromMinutes(accessTokenMinutes)));
+        services.AddSingleton<IRefreshTokenFactory>(new RefreshTokenFactory(TimeSpan.FromDays(refreshTokenDays)));
         services.AddSingleton<IFileStorage>(new LocalFileStorage(
             Path.GetFullPath(configuration["Storage:Path"] ?? "storage")));
         return services;

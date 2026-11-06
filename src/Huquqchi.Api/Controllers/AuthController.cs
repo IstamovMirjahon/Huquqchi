@@ -26,6 +26,15 @@ public sealed class AuthController(IAuthService service, IConfiguration config) 
             request.Phone, request.Code, request.Name, request.WorkspaceKind), ct);
         return result.ToActionResult(this);
     }
+
+    [HttpPost("refresh"), AllowAnonymous]
+    public async Task<ActionResult<AuthResponse>> Refresh(RefreshRequest request, CancellationToken ct) =>
+        (await service.RefreshAsync(new RefreshTokenCommand(request.RefreshToken), ct)).ToActionResult(this);
+
+    [HttpPost("logout"), AllowAnonymous]
+    public async Task<IActionResult> Logout(RefreshRequest request, CancellationToken ct) =>
+        (await service.LogoutAsync(new LogoutCommand(request.RefreshToken), ct)).ToNoContentResult(this);
 }
 public sealed record RequestCodeRequest(string Phone);
 public sealed record VerifyCodeRequest(string Phone, string Code, string Name, WorkspaceKind WorkspaceKind = WorkspaceKind.Personal);
+public sealed record RefreshRequest(string RefreshToken);

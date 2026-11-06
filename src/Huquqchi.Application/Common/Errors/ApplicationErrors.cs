@@ -8,6 +8,8 @@ public static class ApplicationErrors
         public static readonly Error InvalidPhone = new("auth.invalid_phone", "Telefon raqamini kiriting.", ErrorType.Validation);
         public static readonly Error CodeRateLimited = new("auth.code_rate_limited", "Yangi kod olishdan oldin 60 soniya kuting.", ErrorType.Conflict);
         public static readonly Error OtpNotConfigured = new("auth.otp_not_configured", "OTP xavfsizlik konfiguratsiyasi mavjud emas.", ErrorType.Failure);
+        public static readonly Error InvalidRefreshToken = new("auth.invalid_refresh_token", "Refresh token noto‘g‘ri yoki muddati tugagan.", ErrorType.Unauthorized);
+        public static readonly Error PhoneAlreadyLinked = new("auth.phone_already_linked", "Bu telefon raqami boshqa Telegram akkauntiga bog‘langan.", ErrorType.Conflict);
     }
 
     public static class Documents

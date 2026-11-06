@@ -23,7 +23,10 @@ builder.Services.AddSwaggerGen(x =>
 {
     x.SwaggerDoc("v1", new OpenApiInfo { Title = "Huquqchi API", Version = "v1", Description = "O‘zbekiston huquqi bo‘yicha Huquqchi mobil ilovasi backend API" });
     x.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme { Type = SecuritySchemeType.Http, Scheme = "bearer", BearerFormat = "JWT", Description = "Verify endpointidan olingan JWT token" });
-    x.AddSecurityRequirement(_ => new OpenApiSecurityRequirement { { new OpenApiSecuritySchemeReference("Bearer", null), [] } });
+    x.AddSecurityRequirement(document => new OpenApiSecurityRequirement
+    {
+        { new OpenApiSecuritySchemeReference("Bearer", document), [] }
+    });
 });
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration, jwtIssuer, jwtAudience, jwtKey);
