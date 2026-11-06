@@ -23,6 +23,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<Draft> Drafts => Set<Draft>();
     public DbSet<Consent> Consents => Set<Consent>();
     public DbSet<AuditEvent> AuditEvents => Set<AuditEvent>();
+    public DbSet<OtpChallenge> OtpChallenges => Set<OtpChallenge>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

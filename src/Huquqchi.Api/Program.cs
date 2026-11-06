@@ -54,8 +54,9 @@ if (!app.Environment.IsEnvironment("Testing"))
         throw new InvalidOperationException("Jwt:Key kamida 32 belgidan iborat bo‘lishi kerak.");
     if (string.IsNullOrWhiteSpace(app.Configuration.GetConnectionString("Postgres")))
         throw new InvalidOperationException("ConnectionStrings:Postgres konfiguratsiyasi majburiy.");
-    if (string.IsNullOrWhiteSpace(app.Configuration["Otp:Code"]))
-        throw new InvalidOperationException("Otp:Code real SMS provayder ulanguncha majburiy.");
+    var otpHashKey = app.Configuration["Otp:HashKey"];
+    if (string.IsNullOrWhiteSpace(otpHashKey) || otpHashKey.Length < 32)
+        throw new InvalidOperationException("Otp:HashKey kamida 32 belgidan iborat bo‘lishi kerak.");
 }
 app.UseMiddleware<ApiExceptionMiddleware>();
 app.UseSwagger();

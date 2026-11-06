@@ -6,6 +6,8 @@ public static class ApplicationErrors
     {
         public static readonly Error InvalidCode = new("auth.invalid_code", "Telefon yoki bir martalik kod noto‘g‘ri.", ErrorType.Unauthorized);
         public static readonly Error InvalidPhone = new("auth.invalid_phone", "Telefon raqamini kiriting.", ErrorType.Validation);
+        public static readonly Error CodeRateLimited = new("auth.code_rate_limited", "Yangi kod olishdan oldin 60 soniya kuting.", ErrorType.Conflict);
+        public static readonly Error OtpNotConfigured = new("auth.otp_not_configured", "OTP xavfsizlik konfiguratsiyasi mavjud emas.", ErrorType.Failure);
     }
 
     public static class Documents

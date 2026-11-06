@@ -6,20 +6,24 @@ using Microsoft.AspNetCore.Mvc;
 namespace Huquqchi.Api.Controllers;
 
 [ApiController, Route("api/v1/auth")]
-public sealed class AuthController(IAuthService service, IConfiguration config, IWebHostEnvironment environment) : ControllerBase
+public sealed class AuthController(IAuthService service, IConfiguration config) : ControllerBase
 {
     [HttpPost("request-code"), AllowAnonymous]
     public IActionResult RequestCode(RequestCodeRequest request)
     {
-        if (string.IsNullOrWhiteSpace(request.Phone)) return this.ToProblem(ApplicationErrors.Auth.InvalidPhone);
-        return Accepted(new { message = "Tasdiqlash kodi yuborildi.", developmentCode = environment.IsDevelopment() ? config["Otp:Code"] : null });
+        if (PhoneNumber.Normalize(request.Phone) is null) return this.ToProblem(ApplicationErrors.Auth.InvalidPhone);
+        return Accepted(new
+        {
+            message = "Tasdiqlash kodini Telegram bot orqali oling.",
+            deliveryChannel = "telegram",
+            telegramBotUrl = config["Telegram:BotUrl"]
+        });
     }
     [HttpPost("verify"), AllowAnonymous]
     public async Task<ActionResult<AuthResponse>> Verify(VerifyCodeRequest request, CancellationToken ct)
     {
-        var result = await service.VerifyAsync(new VerifyCodeCommand(request.Phone, request.Code, request.Name,
-            request.WorkspaceKind, config["Otp:Code"]
-                ?? throw new InvalidOperationException("Otp:Code konfiguratsiyasi mavjud emas.")), ct);
+        var result = await service.VerifyAsync(new VerifyCodeCommand(
+            request.Phone, request.Code, request.Name, request.WorkspaceKind), ct);
         return result.ToActionResult(this);
     }
 }

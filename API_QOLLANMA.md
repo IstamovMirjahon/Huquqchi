@@ -8,7 +8,7 @@ Asosiy manba: `Huquqchi_Funksional_Topshiriq_va_Dizayn.md`
 
 Backendning Clean Architecture asosidagi MVP API qismi ishlaydi: autentifikatsiya, profil, suhbatlar, hujjat ombori, tahlil so‘rovlari, qonunlar katalogi, shablonlar va hujjat loyihalari mavjud.
 
-Funksional topshiriqdagi barcha mahsulot funksiyalari hali tugallanmagan. Xususan, real SMS/OTP, AI/RAG, OCR, vektor qidiruv, DOCX/PDF eksport, bildirishnomalar, obuna/to‘lov, aktiv sessiyalar, hisobni o‘chirish va administrator API’lari keyingi implementatsiyani talab qiladi.
+Funksional topshiriqdagi barcha mahsulot funksiyalari hali tugallanmagan. Telegram orqali xavfsiz OTP mavjud; SMS, email, AI/RAG, OCR, vektor qidiruv, DOCX/PDF eksport, bildirishnomalar, obuna/to‘lov, aktiv sessiyalar, hisobni o‘chirish va administrator API’lari keyingi implementatsiyani talab qiladi.
 
 Hozir backend jami 23 ta HTTP endpoint beradi:
 
@@ -38,7 +38,7 @@ Manzillar:
 | Swagger JSON | `http://localhost:8080/swagger/v1/swagger.json` |
 | Health check | `http://localhost:8080/health` |
 
-Development muhitidagi OTP kodi: `111111`.
+OTP statik emas. Telegram bot foydalanuvchining o‘z kontaktiga bog‘langan 6 xonali kod yaratadi; kod 5 daqiqa amal qiladi va faqat bir marta ishlatiladi.
 
 ## 3. Autentifikatsiya
 
@@ -46,10 +46,11 @@ Development muhitidagi OTP kodi: `111111`.
 
 Token olish tartibi:
 
-1. `POST /api/v1/auth/request-code` orqali kod so‘raladi.
-2. `POST /api/v1/auth/verify` orqali kod tasdiqlanadi.
-3. Javobdagi `accessToken` olinadi.
-4. Keyingi so‘rovlarga quyidagi header qo‘shiladi:
+1. `POST /api/v1/auth/request-code` orqali Telegram bot havolasi olinadi.
+2. Botda `/start` bosilib, foydalanuvchining o‘z telefon kontakti yuboriladi.
+3. Bot yuborgan 6 xonali kod `POST /api/v1/auth/verify` orqali tasdiqlanadi.
+4. Javobdagi `accessToken` olinadi.
+5. Keyingi so‘rovlarga quyidagi header qo‘shiladi:
 
 ```http
 Authorization: Bearer ACCESS_TOKEN
@@ -99,7 +100,7 @@ Frontend foydalanuvchiga `detail` matnini ko‘rsatishi mumkin, dasturiy qarorla
 | Method | Endpoint | Auth | Asosiy vazifa | Ilovada ishlatiladigan joy |
 |---|---|---:|---|---|
 | `GET` | `/health` | Yo‘q | API va PostgreSQL holatini tekshirish | Docker, CI/CD, server monitoring |
-| `POST` | `/api/v1/auth/request-code` | Yo‘q | Telefon uchun OTP so‘rash | Kirish ekrani |
+| `POST` | `/api/v1/auth/request-code` | Yo‘q | Telegram OTP bot havolasini olish | Kirish ekrani |
 | `POST` | `/api/v1/auth/verify` | Yo‘q | OTP’ni tekshirish va JWT olish | Kod tasdiqlash/ro‘yxatdan o‘tish |
 | `GET` | `/api/v1/profile` | Ha | Joriy profil va workspace’ni olish | Profil, Home salomlashuvi |
 | `PATCH` | `/api/v1/profile` | Ha | Ism va tilni yangilash | Profil sozlamalari |
@@ -141,7 +142,7 @@ Muvaffaqiyatli javob: `200 OK` va `Healthy`.
 
 ### `POST /api/v1/auth/request-code`
 
-Telefon raqamiga bir martalik kod so‘rash oqimini boshlaydi.
+Telefon raqamini tekshiradi va kod olinadigan Telegram bot havolasini qaytaradi.
 
 Request:
 
@@ -155,12 +156,13 @@ Javob: `202 Accepted`.
 
 ```json
 {
-  "message": "Tasdiqlash kodi yuborildi.",
-  "developmentCode": "111111"
+  "message": "Tasdiqlash kodini Telegram bot orqali oling.",
+  "deliveryChannel": "telegram",
+  "telegramBotUrl": "https://t.me/huquqchi_bot"
 }
 ```
 
-`developmentCode` faqat Development muhitida chiqadi. Hozir real SMS provayder ulanmagan; endpoint SMS yuborilganini simulyatsiya qiladi.
+Bot `/start` buyrug‘idan keyin kontakt yuborish tugmasini ko‘rsatadi. Faqat Telegram foydalanuvchisining o‘z kontakti qabul qilinadi. Kod hash ko‘rinishida PostgreSQL’da saqlanadi, 5 daqiqa amal qiladi, 5 ta noto‘g‘ri urinishdan keyin bloklanadi va muvaffaqiyatli kirishdan keyin qayta ishlatilmaydi.
 
 Asosiy xato kodi: `auth.invalid_phone`.
 
@@ -173,7 +175,7 @@ Request:
 ```json
 {
   "phone": "+998901234567",
-  "code": "111111",
+  "code": "123456",
   "name": "Ali Valiyev",
   "workspaceKind": "Personal"
 }
@@ -192,7 +194,7 @@ Javob: `200 OK`.
 }
 ```
 
-Asosiy xato kodlari: `auth.invalid_phone`, `auth.invalid_code`.
+Asosiy xato kodlari: `auth.invalid_phone`, `auth.invalid_code`, `auth.code_rate_limited`.
 
 ## 8. Profile API
 
@@ -561,8 +563,7 @@ Quyidagi imkoniyatlar funksional topshiriqda bor, lekin joriy backendda endpoint
 
 ### Auth va account
 
-- real SMS provayder orqali OTP yuborish;
-- kodni qayta yuborish limiti va urinishlar chegarasi;
+- SMS yoki email orqali OTP yuborish;
 - refresh token;
 - hisobni tiklash;
 - aktiv sessiyalar va barcha qurilmalardan chiqish;
@@ -625,7 +626,7 @@ Quyidagi imkoniyatlar funksional topshiriqda bor, lekin joriy backendda endpoint
 |---|---|---|
 | Clean Architecture va DDD qatlamlari | Tayyor | Domain, Application, Infrastructure, API ajratilgan |
 | PostgreSQL va EF Core | Tayyor | Configurations, migration va index/FK’lar mavjud |
-| JWT auth skeleti | MVP tayyor | Real OTP va session/refresh token hali yo‘q |
+| JWT auth va Telegram OTP | MVP tayyor | 5 daqiqalik, bir martalik kod bor; refresh token hali yo‘q |
 | Workspace isolation | Tayyor | Hujjat va chatlar workspace bo‘yicha tekshiriladi |
 | Hujjat ombori | MVP tayyor | Upload, list, search, rename, tags, download, soft-delete |
 | AI hujjat tahlili | Skelet | History/status ishlaydi, real OCR/AI yo‘q |

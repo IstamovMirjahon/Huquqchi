@@ -12,7 +12,7 @@ docker compose up --build
 
 Swagger: `http://localhost:8080/swagger`
 
-Development OTP kodi: `111111`.
+Tasdiqlash kodi alohida `Huquqchi.TelegramBot` worker orqali yuboriladi. BotFather tokeni `Telegram__BotToken`, OTP hash kaliti esa `Otp__HashKey` konfiguratsiyasidan olinadi.
 
 Yoki faqat PostgreSQLni Dockerda, API'ni lokal ishga tushirish:
 
@@ -23,10 +23,11 @@ dotnet run --project src/Huquqchi.Api
 
 ## Asosiy API oqimi
 
-1. `POST /api/v1/auth/request-code`
-2. `POST /api/v1/auth/verify` va javobdagi `accessToken`ni olish
-3. Swagger `Authorize` tugmasiga tokenni kiritish
-4. Hujjat, suhbat, tahlil, shablon va draft endpointlarini chaqirish
+1. `POST /api/v1/auth/request-code` orqali Telegram bot havolasini olish.
+2. Botda `/start` bosib o‘z telefon kontaktini yuborish va 6 xonali kodni olish.
+3. `POST /api/v1/auth/verify` orqali kodni tasdiqlab `accessToken` olish.
+4. Swagger `Authorize` tugmasiga tokenni kiritish.
+5. Hujjat, suhbat, tahlil, shablon va draft endpointlarini chaqirish.
 
 Guest uchun `GET /api/v1/legal-documents` ochiq. `GET /health` health endpointi.
 
@@ -41,7 +42,7 @@ Arxitektura va keyingi ishlar: [BACKEND_PLAN.md](BACKEND_PLAN.md).
 
 ## CI/CD
 
-- `CI`: build, test, dependency audit, PostgreSQL migration va Docker image build.
+- `CI`: build, test, dependency audit, PostgreSQL migration hamda API/bot Docker image build.
 - `Publish container`: `main` branch va `v*` taglarda image'ni GitHub Container Registry'ga chiqaradi.
 - `Deploy to server`: GitHub Actions'dan qo‘lda ishga tushiriladi va SSH orqali serverdagi production compose stack'ni yangilaydi.
 
@@ -53,8 +54,8 @@ Birinchi deploydan oldin serverda `deploy/bootstrap-server.sh` bir marta bajaril
 
 - `appsettings.json` production uchun secretsiz bazaviy sozlamalarni saqlaydi.
 - `appsettings.Development.json` lokal PostgreSQL, development JWT, OTP va storage sozlamalarini saqlaydi.
-- Production `ConnectionStrings__Postgres`, `Jwt__Key` va `Otp__Code` qiymatlarini server `.env` fayli orqali oladi. Majburiy secret yo‘q yoki JWT kaliti 32 belgidan qisqa bo‘lsa API ishga tushmaydi.
+- Production `ConnectionStrings__Postgres`, `Jwt__Key`, `Otp__HashKey` va `Telegram__BotToken` qiymatlarini server `.env` fayli orqali oladi. Majburiy secret yo‘q yoki kalitlar 32 belgidan qisqa bo‘lsa tegishli service ishga tushmaydi.
 
 ## Muhim chegara
 
-SMS, OCR va real AI/RAG provayderlari ataylab adapter ortida qoldirilgan. Hozirgi xavfsiz hackathon implementatsiyasi faylni saqlaydi, oqimlarni ishlatadi va provayder bo‘lmasa soxta huquqiy xulosa bermaydi.
+SMS o‘rniga Telegram OTP worker ishlaydi. OCR va real AI/RAG provayderlari adapter ortida qoldirilgan. Hozirgi xavfsiz hackathon implementatsiyasi faylni saqlaydi, oqimlarni ishlatadi va provayder bo‘lmasa soxta huquqiy xulosa bermaydi.

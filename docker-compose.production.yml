@@ -25,7 +25,8 @@ services:
       Jwt__Issuer: ${JWT_ISSUER:-huquqchi}
       Jwt__Audience: ${JWT_AUDIENCE:-huquqchi-mobile}
       Jwt__Key: ${JWT_KEY:?JWT_KEY is required}
-      Otp__Code: ${OTP_CODE:?OTP_CODE is required until SMS provider is connected}
+      Otp__HashKey: ${OTP_HASH_KEY:?OTP_HASH_KEY is required}
+      Telegram__BotUrl: ${TELEGRAM_BOT_URL:?TELEGRAM_BOT_URL is required}
       Storage__Path: /app/storage
       Database__AutoMigrate: "true"
     volumes:
@@ -41,6 +42,19 @@ services:
       timeout: 5s
       start_period: 30s
       retries: 5
+    networks: [backend]
+
+  bot:
+    image: ${HUQUQCHI_BOT_IMAGE:?HUQUQCHI_BOT_IMAGE is required}
+    restart: unless-stopped
+    environment:
+      DOTNET_ENVIRONMENT: Production
+      ConnectionStrings__Postgres: Host=postgres;Port=5432;Database=${POSTGRES_DB:-huquqchi};Username=${POSTGRES_USER:-huquqchi};Password=${POSTGRES_PASSWORD}
+      Otp__HashKey: ${OTP_HASH_KEY:?OTP_HASH_KEY is required}
+      Telegram__BotToken: ${TELEGRAM_BOT_TOKEN:?TELEGRAM_BOT_TOKEN is required}
+    depends_on:
+      postgres:
+        condition: service_healthy
     networks: [backend]
 
 networks:

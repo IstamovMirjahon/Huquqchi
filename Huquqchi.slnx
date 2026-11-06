@@ -4,6 +4,7 @@
     <Project Path="src/Huquqchi.Application/Huquqchi.Application.csproj" />
     <Project Path="src/Huquqchi.Domain/Huquqchi.Domain.csproj" />
     <Project Path="src/Huquqchi.Infrastructure/Huquqchi.Infrastructure.csproj" />
+    <Project Path="src/Huquqchi.TelegramBot/Huquqchi.TelegramBot.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Huquqchi.IntegrationTests/Huquqchi.IntegrationTests.csproj" />

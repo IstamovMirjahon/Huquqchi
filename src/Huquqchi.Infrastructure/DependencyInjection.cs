@@ -14,11 +14,18 @@ public static class DependencyInjection
         string jwtAudience,
         string jwtKey)
     {
-        services.AddDbContext<AppDbContext>(options => options.UseNpgsql(configuration.GetConnectionString("Postgres")));
-        services.AddScoped<IUnitOfWork, UnitOfWork>();
+        services.AddPersistence(configuration);
         services.AddSingleton<ITokenService>(new JwtTokenService(jwtIssuer, jwtAudience, jwtKey));
         services.AddSingleton<IFileStorage>(new LocalFileStorage(
             Path.GetFullPath(configuration["Storage:Path"] ?? "storage")));
+        return services;
+    }
+
+    public static IServiceCollection AddPersistence(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddDbContext<AppDbContext>(options => options.UseNpgsql(configuration.GetConnectionString("Postgres")));
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
+        services.AddScoped<IOneTimeCodeService, OneTimeCodeService>();
         return services;
     }
 }

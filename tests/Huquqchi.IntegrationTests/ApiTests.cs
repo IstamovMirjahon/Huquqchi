@@ -22,16 +22,57 @@ public sealed class TestApiFactory : WebApplicationFactory<Program>
         builder.ConfigureAppConfiguration((_, config) => config.AddInMemoryCollection(new Dictionary<string, string?>
         {
             ["Database:AutoMigrate"] = "false",
-            ["Otp:Code"] = "111111",
+            ["Otp:HashKey"] = "integration-test-otp-hash-key-not-secret",
             ["Jwt:Key"] = "integration-test-key-is-long-enough-123456789"
         }));
         builder.ConfigureServices(services =>
         {
             services.RemoveAll<IUnitOfWork>();
             services.RemoveAll<IFileStorage>();
+            services.RemoveAll<IOneTimeCodeService>();
             services.AddSingleton<IUnitOfWork, TestUnitOfWork>();
             services.AddSingleton<IFileStorage, MemoryFileStorage>();
+            services.AddSingleton<IOneTimeCodeService, TestOneTimeCodeService>();
         });
+    }
+}
+
+public sealed class TestOneTimeCodeService : IOneTimeCodeService
+{
+    public Task<Result<IssuedOneTimeCode>> IssueAsync(string phone, OtpDeliveryChannel channel, long externalUserId,
+        CancellationToken cancellationToken) =>
+        Task.FromResult(Result.Success(new IssuedOneTimeCode("111111", DateTimeOffset.UtcNow.AddMinutes(5))));
+
+    public Task<Result> VerifyAsync(string phone, string code, CancellationToken cancellationToken) =>
+        Task.FromResult(code == "111111"
+            ? Result.Success()
+            : Result.Failure(ApplicationErrors.Auth.InvalidCode));
+}
+
+public sealed class OtpServiceTests
+{
+    [Fact]
+    public async Task Code_is_phone_bound_rate_limited_and_single_use()
+    {
+        var unitOfWork = new TestUnitOfWork();
+        var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["Otp:HashKey"] = "integration-test-otp-hash-key-not-secret"
+        }).Build();
+        var service = new OneTimeCodeService(unitOfWork, configuration);
+
+        var issued = await service.IssueAsync("90 123 45 67", OtpDeliveryChannel.Telegram, 123, default);
+        Assert.True(issued.IsSuccess);
+        Assert.Equal(6, issued.Value.Code.Length);
+
+        var repeated = await service.IssueAsync("+998901234567", OtpDeliveryChannel.Telegram, 123, default);
+        Assert.True(repeated.IsFailure);
+        Assert.Equal("auth.code_rate_limited", repeated.Error.Code);
+
+        var wrongCode = issued.Value.Code == "000000" ? "999999" : "000000";
+        Assert.True((await service.VerifyAsync("+998901234567", wrongCode, default)).IsFailure);
+        Assert.True((await service.VerifyAsync("+998901234567", issued.Value.Code, default)).IsSuccess);
+        Assert.True((await service.VerifyAsync("+998901234567", issued.Value.Code, default)).IsFailure);
     }
 }
 

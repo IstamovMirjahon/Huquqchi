@@ -10,7 +10,7 @@ if [[ ! -f .env ]]; then
   umask 077
   postgres_password="$(openssl rand -hex 32)"
   jwt_key="$(openssl rand -hex 48)"
-  otp_code="$(od -An -N4 -tu4 /dev/urandom | awk '{printf "%06d", $1 % 1000000}')"
+  otp_hash_key="$(openssl rand -hex 48)"
 
   printf '%s\n' \
     'POSTGRES_DB=huquqchi' \
@@ -19,9 +19,12 @@ if [[ ! -f .env ]]; then
     'JWT_ISSUER=huquqchi' \
     'JWT_AUDIENCE=huquqchi-mobile' \
     "JWT_KEY=$jwt_key" \
-    "OTP_CODE=$otp_code" \
+    "OTP_HASH_KEY=$otp_hash_key" \
+    'TELEGRAM_BOT_TOKEN=replace-with-botfather-token' \
+    'TELEGRAM_BOT_URL=https://t.me/replace_with_bot_username' \
     'API_PORT=3500' \
     'HUQUQCHI_IMAGE=ghcr.io/istamovmirjahon/huquqchi:latest' \
+    'HUQUQCHI_BOT_IMAGE=ghcr.io/istamovmirjahon/huquqchi-bot:latest' \
     > .env
   chmod 600 .env
   echo 'Production .env yaratildi.'
