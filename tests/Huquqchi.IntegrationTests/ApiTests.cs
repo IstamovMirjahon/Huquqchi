@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Linq.Expressions;
 using Huquqchi.Application;
 using Huquqchi.Domain;
 using Huquqchi.Infrastructure;
@@ -26,9 +27,9 @@ public sealed class TestApiFactory : WebApplicationFactory<Program>
         }));
         builder.ConfigureServices(services =>
         {
-            services.RemoveAll<IAppDbContext>();
+            services.RemoveAll<IUnitOfWork>();
             services.RemoveAll<IFileStorage>();
-            services.AddSingleton<IAppDbContext, TestAppDbContext>();
+            services.AddSingleton<IUnitOfWork, TestUnitOfWork>();
             services.AddSingleton<IFileStorage, MemoryFileStorage>();
         });
     }
@@ -50,7 +51,7 @@ public sealed class ApiTests(TestApiFactory factory) : IClassFixture<TestApiFact
         var client = factory.CreateClient();
         var verify = await client.PostAsJsonAsync("/api/v1/auth/verify", new { phone = "+998901234567", code = "111111", name = "Ali", workspaceKind = "Personal" });
         verify.EnsureSuccessStatusCode();
-        var auth = await verify.Content.ReadFromJsonAsync<AuthResult>();
+        var auth = await verify.Content.ReadFromJsonAsync<AuthResponse>();
         Assert.NotNull(auth);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", auth.AccessToken);
 
@@ -62,10 +63,29 @@ public sealed class ApiTests(TestApiFactory factory) : IClassFixture<TestApiFact
         form.Add(new StringContent("Uploaded"), "origin");
         var uploaded = await client.PostAsync("/api/v1/documents", form);
         Assert.Equal(HttpStatusCode.Created, uploaded.StatusCode);
+        using var uploadedJson = JsonDocument.Parse(await uploaded.Content.ReadAsStringAsync());
+        var documentId = uploadedJson.RootElement.GetProperty("id").GetGuid();
+
+        using var duplicateForm = new MultipartFormDataContent();
+        duplicateForm.Add(new ByteArrayContent("test pdf content"u8.ToArray())
+        { Headers = { ContentType = new MediaTypeHeaderValue("application/pdf") } }, "file", "duplicate.pdf");
+        duplicateForm.Add(new StringContent("Uploaded"), "origin");
+        var duplicate = await client.PostAsync("/api/v1/documents", duplicateForm);
+        Assert.Equal(HttpStatusCode.Conflict, duplicate.StatusCode);
+        using var duplicateProblem = JsonDocument.Parse(await duplicate.Content.ReadAsStringAsync());
+        Assert.Equal("documents.duplicate", duplicateProblem.RootElement.GetProperty("code").GetString());
+
         var documentsResponse = await client.GetAsync("/api/v1/documents");
         documentsResponse.EnsureSuccessStatusCode();
         using var documents = JsonDocument.Parse(await documentsResponse.Content.ReadAsStringAsync());
         Assert.Equal(1, documents.RootElement.GetArrayLength());
+
+        var secondVerify = await client.PostAsJsonAsync("/api/v1/auth/verify", new
+        { phone = "+998909999999", code = "111111", name = "Vali", workspaceKind = "Personal" });
+        secondVerify.EnsureSuccessStatusCode();
+        var secondAuth = await secondVerify.Content.ReadFromJsonAsync<AuthResponse>();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", secondAuth!.AccessToken);
+        Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync($"/api/v1/documents/{documentId}")).StatusCode);
     }
 }
 
@@ -81,31 +101,36 @@ public sealed class MemoryFileStorage : IFileStorage
     public Task DeleteAsync(string key, CancellationToken ct) { _files.Remove(key); return Task.CompletedTask; }
 }
 
-public sealed class TestAppDbContext : IAppDbContext
+public sealed class TestUnitOfWork : IUnitOfWork
 {
     private readonly Dictionary<Type, object> _sets = new();
-    private List<T> Set<T>() where T : class
+    internal List<T> Set<T>() where T : Entity
     {
         if (!_sets.TryGetValue(typeof(T), out var set)) _sets[typeof(T)] = set = new List<T>();
         return (List<T>)set;
     }
-    public IQueryable<User> Users => Set<User>().AsQueryable();
-    public IQueryable<Workspace> Workspaces => Set<Workspace>().AsQueryable();
-    public IQueryable<Membership> Memberships => Set<Membership>().AsQueryable();
-    public IQueryable<Conversation> Conversations => Set<Conversation>().AsQueryable();
-    public IQueryable<Message> Messages => Set<Message>().AsQueryable();
-    public IQueryable<Citation> Citations => Set<Citation>().AsQueryable();
-    public IQueryable<UploadedDocument> UploadedDocuments => Set<UploadedDocument>().AsQueryable();
-    public IQueryable<DocumentVersion> DocumentVersions => Set<DocumentVersion>().AsQueryable();
-    public IQueryable<ConversationDocument> ConversationDocuments => Set<ConversationDocument>().AsQueryable();
-    public IQueryable<Analysis> Analyses => Set<Analysis>().AsQueryable();
-    public IQueryable<Finding> Findings => Set<Finding>().AsQueryable();
-    public IQueryable<LegalDocument> LegalDocuments => Set<LegalDocument>().AsQueryable();
-    public IQueryable<LegalVersion> LegalVersions => Set<LegalVersion>().AsQueryable();
-    public IQueryable<LegalSection> LegalSections => Set<LegalSection>().AsQueryable();
-    public IQueryable<Template> Templates => Set<Template>().AsQueryable();
-    public IQueryable<Draft> Drafts => Set<Draft>().AsQueryable();
-    public void Add<T>(T entity) where T : class => Set<T>().Add(entity);
-    public void Remove<T>(T entity) where T : class => Set<T>().Remove(entity);
+    public IRepository<T> Repository<T>() where T : Entity => new TestRepository<T>(this);
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default) => Task.FromResult(1);
+}
+
+public sealed class TestRepository<T>(TestUnitOfWork unitOfWork) : IRepository<T> where T : Entity
+{
+    private List<T> Set => unitOfWork.Set<T>();
+    public Task<T?> GetByIdAsync(Guid id, bool asTracking = false, CancellationToken cancellationToken = default) =>
+        Task.FromResult(Set.FirstOrDefault(x => x.Id == id));
+    public Task<T?> FirstOrDefaultAsync(Expression<Func<T, bool>> predicate, bool asTracking = false, CancellationToken cancellationToken = default) =>
+        Task.FromResult(Set.AsQueryable().FirstOrDefault(predicate));
+    public Task<IReadOnlyList<T>> ListAsync(Expression<Func<T, bool>>? predicate = null,
+        Func<IQueryable<T>, IOrderedQueryable<T>>? orderBy = null, bool asTracking = false,
+        CancellationToken cancellationToken = default)
+    {
+        IQueryable<T> query = Set.AsQueryable();
+        if (predicate is not null) query = query.Where(predicate);
+        if (orderBy is not null) query = orderBy(query);
+        return Task.FromResult<IReadOnlyList<T>>(query.ToList());
+    }
+    public Task<bool> AnyAsync(Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default) =>
+        Task.FromResult(Set.AsQueryable().Any(predicate));
+    public Task AddAsync(T entity, CancellationToken cancellationToken = default) { Set.Add(entity); return Task.CompletedTask; }
+    public void Remove(T entity) => Set.Remove(entity);
 }

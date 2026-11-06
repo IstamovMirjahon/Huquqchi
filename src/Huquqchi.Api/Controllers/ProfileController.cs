@@ -5,20 +5,13 @@ using Microsoft.AspNetCore.Mvc;
 namespace Huquqchi.Api.Controllers;
 
 [ApiController, Authorize, Route("api/v1/profile")]
-public sealed class ProfileController(IAppDbContext db) : ApiController
+public sealed class ProfileController(IProfileService service) : ApiController
 {
-    [HttpGet]
-    public object Get()
-    {
-        var user = db.Users.First(x => x.Id == Actor.UserId);
-        var workspace = db.Workspaces.First(x => x.Id == Actor.WorkspaceId);
-        return new { user.Id, user.Name, user.Phone, user.Language, Workspace = new { workspace.Id, workspace.Name, workspace.Kind }, Actor.Role };
-    }
+    [HttpGet] public async Task<ActionResult<ProfileResponse>> Get(CancellationToken ct) => (await service.GetAsync(Actor, ct)).ToActionResult(this);
     [HttpPatch]
     public async Task<IActionResult> Update(UpdateProfileRequest request, CancellationToken ct)
     {
-        if (string.IsNullOrWhiteSpace(request.Name)) throw new ValidationException("Ism bo‘sh bo‘lmasligi kerak.");
-        var user = db.Users.First(x => x.Id == Actor.UserId); user.UpdateProfile(request.Name, request.Language); await db.SaveChangesAsync(ct); return NoContent();
+        return (await service.UpdateAsync(Actor, new UpdateProfileCommand(request.Name, request.Language), ct)).ToNoContentResult(this);
     }
 }
 public sealed record UpdateProfileRequest(string Name, string Language = "uz-Latn");

@@ -9,6 +9,15 @@
 
 Bog‘liqlik yo‘nalishi: `Api -> Infrastructure -> Application -> Domain`.
 
+### Ichki tuzilma
+
+- Domain entitylari bounded-context papkalarida va har biri alohida faylda.
+- Application use-case'lari `Features/<Feature>` ichida interface, contract va service sifatida ajratilgan.
+- Kutiladigan biznes xatolari `Result<T>` va barqaror error code orqali qaytadi.
+- Infrastructure `IRepository<T>` va `IUnitOfWork` portlarini EF Core bilan implementatsiya qiladi.
+- Har bir entity explicit `IEntityTypeConfiguration<T>` konfiguratsiyasiga ega.
+- API controllerlari persistence'ni bilmaydi; faqat request mapping va HTTP response mapping bajaradi.
+
 ## 2. MVP ketma-ketligi
 
 1. Solution, 4 qatlam va test projectlari.

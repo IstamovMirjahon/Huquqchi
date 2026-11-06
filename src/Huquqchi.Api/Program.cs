@@ -10,9 +10,12 @@ using Microsoft.OpenApi;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 var builder = WebApplication.CreateBuilder(args);
-var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "huquqchi";
-var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "huquqchi-mobile";
-var jwtKey = builder.Configuration["Jwt:Key"] ?? "dev-only-key-change-this-before-production-123456789";
+const string nonProductionJwtKey = "local-test-host-only-signing-key-not-secret";
+var jwtIssuer = builder.Configuration["Jwt:Issuer"]
+    ?? throw new InvalidOperationException("Jwt:Issuer konfiguratsiyasi majburiy.");
+var jwtAudience = builder.Configuration["Jwt:Audience"]
+    ?? throw new InvalidOperationException("Jwt:Audience konfiguratsiyasi majburiy.");
+var jwtKey = builder.Configuration["Jwt:Key"] ?? nonProductionJwtKey;
 
 builder.Services.AddControllers().AddJsonOptions(x => x.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 builder.Services.AddEndpointsApiExplorer();
@@ -22,23 +25,20 @@ builder.Services.AddSwaggerGen(x =>
     x.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme { Type = SecuritySchemeType.Http, Scheme = "bearer", BearerFormat = "JWT", Description = "Verify endpointidan olingan JWT token" });
     x.AddSecurityRequirement(_ => new OpenApiSecurityRequirement { { new OpenApiSecuritySchemeReference("Bearer", null), [] } });
 });
-builder.Services.AddDbContext<AppDbContext>(x => x.UseNpgsql(builder.Configuration.GetConnectionString("Postgres")));
-builder.Services.AddScoped<IAppDbContext>(sp => sp.GetRequiredService<AppDbContext>());
-builder.Services.AddSingleton<ITokenService>(new JwtTokenService(jwtIssuer, jwtAudience, jwtKey));
-builder.Services.AddSingleton<IFileStorage>(new LocalFileStorage(Path.GetFullPath(builder.Configuration["Storage:Path"] ?? "storage")));
-builder.Services.AddScoped<AuthService>();
-builder.Services.AddScoped<DocumentService>();
-builder.Services.AddScoped<ConversationService>();
-builder.Services.AddScoped<CatalogService>();
-builder.Services.AddScoped<DraftService>();
+builder.Services.AddApplication();
+builder.Services.AddInfrastructure(builder.Configuration, jwtIssuer, jwtAudience, jwtKey);
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(x =>
 {
     x.TokenValidationParameters = new TokenValidationParameters
     {
-        ValidateIssuer = true, ValidIssuer = jwtIssuer,
-        ValidateAudience = true, ValidAudience = jwtAudience,
-        ValidateIssuerSigningKey = true, IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
-        ValidateLifetime = true, ClockSkew = TimeSpan.FromSeconds(30)
+        ValidateIssuer = true,
+        ValidIssuer = jwtIssuer,
+        ValidateAudience = true,
+        ValidAudience = jwtAudience,
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
+        ValidateLifetime = true,
+        ClockSkew = TimeSpan.FromSeconds(30)
     };
 });
 builder.Services.AddAuthorization();
@@ -47,6 +47,16 @@ if (!builder.Environment.IsEnvironment("Testing"))
     healthChecks.AddCheck<DatabaseHealthCheck>("postgres", failureStatus: HealthStatus.Unhealthy, tags: ["ready"]);
 
 var app = builder.Build();
+if (!app.Environment.IsEnvironment("Testing"))
+{
+    var configuredJwtKey = app.Configuration["Jwt:Key"];
+    if (string.IsNullOrWhiteSpace(configuredJwtKey) || configuredJwtKey.Length < 32)
+        throw new InvalidOperationException("Jwt:Key kamida 32 belgidan iborat bo‘lishi kerak.");
+    if (string.IsNullOrWhiteSpace(app.Configuration.GetConnectionString("Postgres")))
+        throw new InvalidOperationException("ConnectionStrings:Postgres konfiguratsiyasi majburiy.");
+    if (string.IsNullOrWhiteSpace(app.Configuration["Otp:Code"]))
+        throw new InvalidOperationException("Otp:Code real SMS provayder ulanguncha majburiy.");
+}
 app.UseMiddleware<ApiExceptionMiddleware>();
 app.UseSwagger();
 app.UseSwaggerUI(x => x.SwaggerEndpoint("/swagger/v1/swagger.json", "Huquqchi API v1"));

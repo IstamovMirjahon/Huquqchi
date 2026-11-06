@@ -25,7 +25,6 @@ namespace Huquqchi.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("Huquqchi.Domain.Analysis", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
@@ -43,7 +42,8 @@ namespace Huquqchi.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("Purpose")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
                         .HasColumnName("purpose");
 
                     b.Property<int>("Status")
@@ -59,7 +59,8 @@ namespace Huquqchi.Infrastructure.Persistence.Migrations
                         .HasColumnName("updated_at");
 
                     b.Property<string>("UserRole")
-                        .HasColumnType("text")
+                        .HasMaxLength(160)
+                        .HasColumnType("character varying(160)")
                         .HasColumnName("user_role");
 
                     b.Property<Guid>("WorkspaceId")
@@ -68,19 +69,23 @@ namespace Huquqchi.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("analysis");
+                    b.HasIndex("DocumentVersionId");
+
+                    b.HasIndex("WorkspaceId", "CreatedAt");
+
+                    b.ToTable("analysis", (string)null);
                 });
 
             modelBuilder.Entity("Huquqchi.Domain.AuditEvent", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
                     b.Property<string>("Action")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
                         .HasColumnName("action");
 
                     b.Property<DateTimeOffset>("CreatedAt")
@@ -88,12 +93,14 @@ namespace Huquqchi.Infrastructure.Persistence.Migrations
                         .HasColumnName("created_at");
 
                     b.Property<string>("ResourceId")
-                        .HasColumnType("text")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
                         .HasColumnName("resource_id");
 
                     b.Property<string>("ResourceType")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
                         .HasColumnName("resource_type");
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
@@ -110,13 +117,16 @@ namespace Huquqchi.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("audit_event");
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("WorkspaceId", "CreatedAt");
+
+                    b.ToTable("audit_event", (string)null);
                 });
 
             modelBuilder.Entity("Huquqchi.Domain.Citation", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
@@ -135,7 +145,8 @@ namespace Huquqchi.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("Locator")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
                         .HasColumnName("locator");
 
                     b.Property<Guid>("MessageId")
@@ -148,13 +159,16 @@ namespace Huquqchi.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("citation");
+                    b.HasIndex("LegalVersionId");
+
+                    b.HasIndex("MessageId");
+
+                    b.ToTable("citation", (string)null);
                 });
 
             modelBuilder.Entity("Huquqchi.Domain.Consent", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
@@ -168,7 +182,8 @@ namespace Huquqchi.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("Policy")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
                         .HasColumnName("policy");
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
@@ -181,18 +196,21 @@ namespace Huquqchi.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("Version")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
                         .HasColumnName("version");
 
                     b.HasKey("Id");
 
-                    b.ToTable("consent");
+                    b.HasIndex("UserId", "Policy", "Version")
+                        .IsUnique();
+
+                    b.ToTable("consent", (string)null);
                 });
 
             modelBuilder.Entity("Huquqchi.Domain.Conversation", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
@@ -210,7 +228,8 @@ namespace Huquqchi.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
                         .HasColumnName("title");
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
@@ -223,15 +242,16 @@ namespace Huquqchi.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("OwnerId");
+
                     b.HasIndex("WorkspaceId", "IsDeleted");
 
-                    b.ToTable("conversation");
+                    b.ToTable("conversation", (string)null);
                 });
 
             modelBuilder.Entity("Huquqchi.Domain.ConversationDocument", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
@@ -253,16 +273,17 @@ namespace Huquqchi.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("DocumentId");
+
                     b.HasIndex("ConversationId", "DocumentId")
                         .IsUnique();
 
-                    b.ToTable("conversation_document");
+                    b.ToTable("conversation_document", (string)null);
                 });
 
             modelBuilder.Entity("Huquqchi.Domain.DocumentVersion", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
@@ -286,7 +307,8 @@ namespace Huquqchi.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("StorageKey")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
                         .HasColumnName("storage_key");
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
@@ -299,13 +321,17 @@ namespace Huquqchi.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("document_version");
+                    b.HasIndex("Sha256");
+
+                    b.HasIndex("DocumentId", "Version")
+                        .IsUnique();
+
+                    b.ToTable("document_version", (string)null);
                 });
 
             modelBuilder.Entity("Huquqchi.Domain.Draft", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
@@ -315,12 +341,13 @@ namespace Huquqchi.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("DataJson")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasColumnType("jsonb")
                         .HasColumnName("data_json");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
                         .HasColumnName("name");
 
                     b.Property<Guid>("OwnerId")
@@ -346,13 +373,18 @@ namespace Huquqchi.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("draft");
+                    b.HasIndex("OwnerId");
+
+                    b.HasIndex("TemplateId");
+
+                    b.HasIndex("WorkspaceId", "CreatedAt");
+
+                    b.ToTable("draft", (string)null);
                 });
 
             modelBuilder.Entity("Huquqchi.Domain.Finding", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
@@ -374,7 +406,8 @@ namespace Huquqchi.Infrastructure.Persistence.Migrations
                         .HasColumnName("explanation");
 
                     b.Property<string>("Locator")
-                        .HasColumnType("text")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
                         .HasColumnName("locator");
 
                     b.Property<int>("Severity")
@@ -383,7 +416,8 @@ namespace Huquqchi.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasMaxLength(250)
+                        .HasColumnType("character varying(250)")
                         .HasColumnName("title");
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
@@ -392,13 +426,14 @@ namespace Huquqchi.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("finding");
+                    b.HasIndex("AnalysisId");
+
+                    b.ToTable("finding", (string)null);
                 });
 
             modelBuilder.Entity("Huquqchi.Domain.LegalDocument", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
@@ -408,12 +443,14 @@ namespace Huquqchi.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("Number")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
                         .HasColumnName("number");
 
                     b.Property<string>("OfficialUrl")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasMaxLength(2048)
+                        .HasColumnType("character varying(2048)")
                         .HasColumnName("official_url");
 
                     b.Property<int>("Status")
@@ -422,12 +459,14 @@ namespace Huquqchi.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
                         .HasColumnName("title");
 
                     b.Property<string>("Type")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
                         .HasColumnName("type");
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
@@ -438,13 +477,12 @@ namespace Huquqchi.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("Number", "Status");
 
-                    b.ToTable("legal_document");
+                    b.ToTable("legal_document", (string)null);
                 });
 
             modelBuilder.Entity("Huquqchi.Domain.LegalSection", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
@@ -458,7 +496,8 @@ namespace Huquqchi.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("Number")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
                         .HasColumnName("number");
 
                     b.Property<string>("Text")
@@ -468,7 +507,8 @@ namespace Huquqchi.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
                         .HasColumnName("title");
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
@@ -477,13 +517,15 @@ namespace Huquqchi.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("legal_section");
+                    b.HasIndex("LegalVersionId", "Number")
+                        .IsUnique();
+
+                    b.ToTable("legal_section", (string)null);
                 });
 
             modelBuilder.Entity("Huquqchi.Domain.LegalVersion", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
@@ -509,7 +551,8 @@ namespace Huquqchi.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("SourceUrl")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasMaxLength(2048)
+                        .HasColumnType("character varying(2048)")
                         .HasColumnName("source_url");
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
@@ -518,13 +561,15 @@ namespace Huquqchi.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("legal_version");
+                    b.HasIndex("LegalDocumentId", "EffectiveFrom")
+                        .IsUnique();
+
+                    b.ToTable("legal_version", (string)null);
                 });
 
             modelBuilder.Entity("Huquqchi.Domain.Membership", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
@@ -550,16 +595,17 @@ namespace Huquqchi.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("WorkspaceId");
+
                     b.HasIndex("UserId", "WorkspaceId")
                         .IsUnique();
 
-                    b.ToTable("membership");
+                    b.ToTable("membership", (string)null);
                 });
 
             modelBuilder.Entity("Huquqchi.Domain.Message", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
@@ -586,13 +632,14 @@ namespace Huquqchi.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("message");
+                    b.HasIndex("ConversationId", "CreatedAt");
+
+                    b.ToTable("message", (string)null);
                 });
 
             modelBuilder.Entity("Huquqchi.Domain.Template", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
@@ -603,12 +650,14 @@ namespace Huquqchi.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("Category")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
                         .HasColumnName("category");
 
                     b.Property<string>("Code")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
                         .HasColumnName("code");
 
                     b.Property<DateTimeOffset>("CreatedAt")
@@ -617,12 +666,13 @@ namespace Huquqchi.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
                         .HasColumnName("name");
 
                     b.Property<string>("SchemaJson")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasColumnType("jsonb")
                         .HasColumnName("schema_json");
 
                     b.Property<int>("Status")
@@ -638,19 +688,19 @@ namespace Huquqchi.Infrastructure.Persistence.Migrations
                     b.HasIndex("Code")
                         .IsUnique();
 
-                    b.ToTable("template");
+                    b.ToTable("template", (string)null);
                 });
 
             modelBuilder.Entity("Huquqchi.Domain.UploadedDocument", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
                     b.Property<string>("ContentType")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
                         .HasColumnName("content_type");
 
                     b.Property<DateTimeOffset>("CreatedAt")
@@ -688,7 +738,8 @@ namespace Huquqchi.Infrastructure.Persistence.Migrations
                         .HasColumnName("status");
 
                     b.Property<string>("Tags")
-                        .HasColumnType("text")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
                         .HasColumnName("tags");
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
@@ -701,15 +752,16 @@ namespace Huquqchi.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("OwnerId");
+
                     b.HasIndex("WorkspaceId", "IsDeleted");
 
-                    b.ToTable("uploaded_document");
+                    b.ToTable("uploaded_document", (string)null);
                 });
 
             modelBuilder.Entity("Huquqchi.Domain.User", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
@@ -723,7 +775,8 @@ namespace Huquqchi.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("Language")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
                         .HasColumnName("language");
 
                     b.Property<string>("Name")
@@ -747,13 +800,12 @@ namespace Huquqchi.Infrastructure.Persistence.Migrations
                     b.HasIndex("Phone")
                         .IsUnique();
 
-                    b.ToTable("user");
+                    b.ToTable("user", (string)null);
                 });
 
             modelBuilder.Entity("Huquqchi.Domain.Workspace", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
@@ -767,7 +819,8 @@ namespace Huquqchi.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasMaxLength(160)
+                        .HasColumnType("character varying(160)")
                         .HasColumnName("name");
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
@@ -776,7 +829,185 @@ namespace Huquqchi.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("workspace");
+                    b.ToTable("workspace", (string)null);
+                });
+
+            modelBuilder.Entity("Huquqchi.Domain.Analysis", b =>
+                {
+                    b.HasOne("Huquqchi.Domain.DocumentVersion", null)
+                        .WithMany()
+                        .HasForeignKey("DocumentVersionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Huquqchi.Domain.Workspace", null)
+                        .WithMany()
+                        .HasForeignKey("WorkspaceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Huquqchi.Domain.AuditEvent", b =>
+                {
+                    b.HasOne("Huquqchi.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("Huquqchi.Domain.Workspace", null)
+                        .WithMany()
+                        .HasForeignKey("WorkspaceId")
+                        .OnDelete(DeleteBehavior.SetNull);
+                });
+
+            modelBuilder.Entity("Huquqchi.Domain.Citation", b =>
+                {
+                    b.HasOne("Huquqchi.Domain.LegalVersion", null)
+                        .WithMany()
+                        .HasForeignKey("LegalVersionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Huquqchi.Domain.Message", null)
+                        .WithMany()
+                        .HasForeignKey("MessageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Huquqchi.Domain.Consent", b =>
+                {
+                    b.HasOne("Huquqchi.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Huquqchi.Domain.Conversation", b =>
+                {
+                    b.HasOne("Huquqchi.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Huquqchi.Domain.Workspace", null)
+                        .WithMany()
+                        .HasForeignKey("WorkspaceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Huquqchi.Domain.ConversationDocument", b =>
+                {
+                    b.HasOne("Huquqchi.Domain.Conversation", null)
+                        .WithMany()
+                        .HasForeignKey("ConversationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Huquqchi.Domain.UploadedDocument", null)
+                        .WithMany()
+                        .HasForeignKey("DocumentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Huquqchi.Domain.DocumentVersion", b =>
+                {
+                    b.HasOne("Huquqchi.Domain.UploadedDocument", null)
+                        .WithMany()
+                        .HasForeignKey("DocumentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Huquqchi.Domain.Draft", b =>
+                {
+                    b.HasOne("Huquqchi.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Huquqchi.Domain.Template", null)
+                        .WithMany()
+                        .HasForeignKey("TemplateId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Huquqchi.Domain.Workspace", null)
+                        .WithMany()
+                        .HasForeignKey("WorkspaceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Huquqchi.Domain.Finding", b =>
+                {
+                    b.HasOne("Huquqchi.Domain.Analysis", null)
+                        .WithMany()
+                        .HasForeignKey("AnalysisId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Huquqchi.Domain.LegalSection", b =>
+                {
+                    b.HasOne("Huquqchi.Domain.LegalVersion", null)
+                        .WithMany()
+                        .HasForeignKey("LegalVersionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Huquqchi.Domain.LegalVersion", b =>
+                {
+                    b.HasOne("Huquqchi.Domain.LegalDocument", null)
+                        .WithMany()
+                        .HasForeignKey("LegalDocumentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Huquqchi.Domain.Membership", b =>
+                {
+                    b.HasOne("Huquqchi.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Huquqchi.Domain.Workspace", null)
+                        .WithMany()
+                        .HasForeignKey("WorkspaceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Huquqchi.Domain.Message", b =>
+                {
+                    b.HasOne("Huquqchi.Domain.Conversation", null)
+                        .WithMany()
+                        .HasForeignKey("ConversationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Huquqchi.Domain.UploadedDocument", b =>
+                {
+                    b.HasOne("Huquqchi.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Huquqchi.Domain.Workspace", null)
+                        .WithMany()
+                        .HasForeignKey("WorkspaceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }

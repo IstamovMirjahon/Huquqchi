@@ -4,9 +4,9 @@ services:
     environment:
       POSTGRES_DB: huquqchi
       POSTGRES_USER: huquqchi
-      POSTGRES_PASSWORD: huquqchi_dev
+      POSTGRES_HOST_AUTH_METHOD: trust
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - huquqchi-postgres:/var/lib/postgresql/data
     healthcheck:
@@ -22,7 +22,7 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:8080
-      ConnectionStrings__Postgres: Host=postgres;Port=5432;Database=huquqchi;Username=huquqchi;Password=huquqchi_dev
+      ConnectionStrings__Postgres: Host=postgres;Port=5432;Database=huquqchi;Username=huquqchi
       Jwt__Key: CHANGE-ME-use-at-least-32-random-characters-in-production
       Storage__Path: /app/storage
     ports:
