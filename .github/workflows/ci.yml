@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: huquqchi_ci
+          POSTGRES_USER: huquqchi
+          POSTGRES_PASSWORD: ci_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U huquqchi -d huquqchi_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+          cache: true
+          cache-dependency-path: '**/*.csproj'
+      - run: dotnet restore Huquqchi.slnx
+      - run: dotnet tool restore
+      - run: dotnet build Huquqchi.slnx --configuration Release --no-restore --warnaserror
+      - run: dotnet test Huquqchi.slnx --configuration Release --no-build --no-restore --collect:"XPlat Code Coverage" --results-directory TestResults
+      - run: dotnet list Huquqchi.slnx package --vulnerable --include-transitive
+      - name: Apply PostgreSQL migrations
+        env:
+          ConnectionStrings__Postgres: Host=localhost;Port=5432;Database=huquqchi_ci;Username=huquqchi;Password=ci_password
+        run: dotnet tool run dotnet-ef database update --project src/Huquqchi.Infrastructure --startup-project src/Huquqchi.Api --no-build --configuration Release
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: TestResults
+          if-no-files-found: ignore
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: src/Huquqchi.Api/Dockerfile
+          push: false
+          tags: huquqchi-api:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

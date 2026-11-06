@@ -1,0 +1,30 @@
+@Huquqchi.Api_HostAddress = http://localhost:5230
+
+GET {{Huquqchi.Api_HostAddress}}/health
+Accept: application/json
+
+###
+
+POST {{Huquqchi.Api_HostAddress}}/api/v1/auth/request-code
+Content-Type: application/json
+
+{
+  "phone": "+998901234567"
+}
+
+###
+
+POST {{Huquqchi.Api_HostAddress}}/api/v1/auth/verify
+Content-Type: application/json
+
+{
+  "phone": "+998901234567",
+  "code": "111111",
+  "name": "Ali",
+  "workspaceKind": "Personal"
+}
+
+###
+
+GET {{Huquqchi.Api_HostAddress}}/api/v1/legal-documents?query=mehnat
+Accept: application/json

@@ -1,0 +1,39 @@
+name: Deploy to server
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: GHCR image tag to deploy
+        required: true
+        default: latest
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.2.2
+        env:
+          IMAGE: ghcr.io/${{ github.repository }}:${{ inputs.image_tag }}
+          GHCR_USER: ${{ github.actor }}
+          GHCR_TOKEN: ${{ secrets.GHCR_READ_TOKEN }}
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: ${{ secrets.SERVER_SSH_PORT || 22 }}
+          envs: IMAGE,GHCR_USER,GHCR_TOKEN
+          script_stop: true
+          script: |
+            cd /opt/huquqchi
+            echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
+            sed -i "s|^HUQUQCHI_IMAGE=.*|HUQUQCHI_IMAGE=$IMAGE|" .env
+            docker compose -f docker-compose.production.yml pull api
+            docker compose -f docker-compose.production.yml up -d --remove-orphans
+            docker compose -f docker-compose.production.yml ps
+            curl --fail --retry 10 --retry-delay 5 http://127.0.0.1:${API_PORT:-8080}/health

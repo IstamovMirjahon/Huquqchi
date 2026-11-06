@@ -1,0 +1,52 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-huquqchi}
+      POSTGRES_USER: ${POSTGRES_USER:-huquqchi}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+    volumes:
+      - huquqchi-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-huquqchi} -d ${POSTGRES_DB:-huquqchi}"]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+    networks: [backend]
+
+  api:
+    image: ${HUQUQCHI_IMAGE:?HUQUQCHI_IMAGE is required}
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__Postgres: Host=postgres;Port=5432;Database=${POSTGRES_DB:-huquqchi};Username=${POSTGRES_USER:-huquqchi};Password=${POSTGRES_PASSWORD}
+      Jwt__Issuer: ${JWT_ISSUER:-huquqchi}
+      Jwt__Audience: ${JWT_AUDIENCE:-huquqchi-mobile}
+      Jwt__Key: ${JWT_KEY:?JWT_KEY is required}
+      Otp__Code: ${OTP_CODE:?OTP_CODE is required until SMS provider is connected}
+      Storage__Path: /app/storage
+      Database__AutoMigrate: "true"
+    volumes:
+      - huquqchi-storage:/app/storage
+    ports:
+      - "${API_PORT:-8080}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://localhost:8080/health"]
+      interval: 15s
+      timeout: 5s
+      start_period: 30s
+      retries: 5
+    networks: [backend]
+
+networks:
+  backend:
+    driver: bridge
+
+volumes:
+  huquqchi-postgres:
+  huquqchi-storage:
