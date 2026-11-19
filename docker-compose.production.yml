@@ -59,13 +59,6 @@ services:
         condition: service_healthy
     networks: [backend]
 
-  frontend:
-    image: ${HUQUQCHI_FRONTEND_IMAGE:?HUQUQCHI_FRONTEND_IMAGE is required}
-    restart: unless-stopped
-    ports:
-      - "${FRONTEND_BIND:-127.0.0.1}:${FRONTEND_PORT:-3501}:8080"
-    networks: [backend]
-
 networks:
   backend:
     driver: bridge
