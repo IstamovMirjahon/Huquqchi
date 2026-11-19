@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="uz">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Huquqchi — O‘zbekiston huquqi bo‘yicha AI yordamchi</title>
+  <meta name="description" content="Huquqiy savolga manbali javob oling, hujjatni AI bilan tekshiring va shartnoma loyihasini tayyorlang. Huquqingizni tushuning. Keyingi qadamni biling.">
+  <meta name="theme-color" content="#14161b">
+  <meta property="og:title" content="Huquqchi — Huquqingizni tushuning. Keyingi qadamni biling.">
+  <meta property="og:image" content="logo.png">
+  <meta property="og:description" content="O‘zbekiston qonunchiligi bo‘yicha manbali javoblar, hujjat tahlili va shartnoma ustasi — bitta ilovada.">
+  <link rel="icon" href="favicon.png" type="image/png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=Inter:wght@400;500;600;700&display=swap&subset=latin-ext,cyrillic" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- SVG icon sprite (1.8px strokes, rounded) -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <symbol id="i-chat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></symbol>
+      <symbol id="i-doc" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h4"/><path d="M14 3l5 5h-5z"/><circle cx="16.5" cy="16.5" r="3"/><path d="M21 21l-2.3-2.3"/></symbol>
+      <symbol id="i-pen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3"/><path d="M14 3l5 5"/><path d="M19.4 12.6a1.9 1.9 0 0 1 2.7 2.7L16 21.4l-3.5.9.9-3.5z"/></symbol>
+      <symbol id="i-book" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4h6a4 4 0 0 1 4 4v13a3 3 0 0 0-3-3H2z"/><path d="M22 4h-6a4 4 0 0 0-4 4v13a3 3 0 0 1 3-3h7z"/></symbol>
+      <symbol id="i-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-3.5 8-10V5l-8-3-8 3v7c0 6.5 8 10 8 10z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></symbol>
+      <symbol id="i-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></symbol>
+      <symbol id="i-cpu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.2 4.8L19 10l-4.8 2.2L12 17l-2.2-4.8L5 10l4.8-2.2z"/><path d="M19 16l.9 2.1L22 19l-2.1.9L19 22l-.9-2.1L16 19l2.1-.9z"/></symbol>
+      <symbol id="i-users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8"/><path d="M18.5 14.4A6.5 6.5 0 0 1 21.5 20"/></symbol>
+      <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="M8 12.3l2.8 2.8L16.3 9.5"/></symbol>
+      <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></symbol>
+      <symbol id="i-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+      <symbol id="i-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"/></symbol>
+      <symbol id="i-apple" viewBox="0 0 24 24" fill="currentColor"><path d="M16.4 12.6c0-2.6 2.1-3.8 2.2-3.9-1.2-1.8-3.1-2-3.7-2-1.6-.2-3.1.9-3.9.9-.8 0-2-.9-3.4-.9-1.7 0-3.3 1-4.2 2.6-1.8 3.1-.5 7.7 1.3 10.2.9 1.2 1.9 2.6 3.2 2.6 1.3-.1 1.8-.8 3.3-.8 1.6 0 2 .8 3.4.8 1.4 0 2.3-1.3 3.1-2.5 1-1.4 1.4-2.8 1.4-2.9-.1 0-2.7-1-2.7-4.1zM13.9 5c.7-.9 1.2-2 1-3.2-1 0-2.3.7-3 1.6-.7.8-1.2 2-1.1 3.1 1.2.1 2.3-.6 3.1-1.5z"/></symbol>
+      <symbol id="i-play" viewBox="0 0 24 24" fill="currentColor"><path d="M4.2 2.4c-.3.3-.4.7-.4 1.2v16.8c0 .5.1.9.4 1.2l9.3-9.6z"/><path d="M16.6 15.1l-3.1-3.1 3.1-3.1 3.6 2c1 .6 1 1.6 0 2.2z" opacity=".8"/><path d="M16.6 8.9L5.4 2.5c-.4-.2-.8-.2-1.2-.1l9.3 9.6z" opacity=".9"/><path d="M13.5 12l-9.3 9.6c.4.1.8.1 1.2-.1l11.2-6.4z" opacity=".7"/></symbol>
+    </defs>
+  </svg>
+
+  <div class="ambient" aria-hidden="true"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div></div>
+
+  <!-- ─── Nav ─────────────────────────────────────────────────────────── -->
+  <header class="nav wrap" id="nav">
+    <div class="nav-bar glass">
+      <a class="logo" href="#" aria-label="Huquqchi — bosh sahifa"><span class="mark" aria-hidden="true"><img src="logo.png" alt=""></span>Huquqchi</a>
+      <nav class="nav-links" aria-label="Asosiy">
+        <a href="#imkoniyatlar">Imkoniyatlar</a>
+        <a href="#rollar">Kimlar uchun</a>
+        <a href="#jarayon">Qanday ishlaydi</a>
+        <a href="#xavfsizlik">Xavfsizlik</a>
+        <a href="#savollar">Savollar</a>
+      </nav>
+      <a class="btn btn-ink btn-sm nav-cta" href="#yuklab">Ilovani olish</a>
+      <button class="menu-btn" id="menuBtn" aria-label="Menyuni ochish" aria-expanded="false" aria-controls="mobileMenu"><span></span><span></span><span></span></button>
+    </div>
+    <div class="mobile-menu glass" id="mobileMenu">
+      <a href="#imkoniyatlar">Imkoniyatlar</a>
+      <a href="#rollar">Kimlar uchun</a>
+      <a href="#jarayon">Qanday ishlaydi</a>
+      <a href="#xavfsizlik">Xavfsizlik</a>
+      <a href="#savollar">Savollar</a>
+      <a class="btn btn-ink" href="#yuklab">Ilovani olish</a>
+    </div>
+  </header>
+
+  <main>
+    <!-- ─── Hero ──────────────────────────────────────────────────────── -->
+    <section class="hero">
+      <div class="wrap hero-grid">
+        <div>
+          <span class="eyebrow fade" style="animation-delay:.05s">O‘zbekiston huquqi bo‘yicha AI yordamchi</span>
+          <h1 id="heroTitle" aria-label="Huquqingizni tushuning. Keyingi qadamni biling.">
+            <span data-words>Huquqingizni tushuning.</span><br>
+            <span class="gtx" data-words>Keyingi qadamni biling.</span>
+          </h1>
+          <p class="lead fade" style="animation-delay:.7s">Huquqchi ilovasi ishlab chiqilmoqda: maqsadimiz savollar, hujjatlar va shartnomalar bilan ishlashda rasmiy manbalarga tayangan tushunarli yordam berish.</p>
+          <div class="hero-ctas fade" style="animation-delay:.85s">
+            <a class="btn btn-ink" href="#yuklab">Ilovani yuklab olish <svg class="arr" width="18" height="18"><use href="#i-arrow"/></svg></a>
+            <a class="btn btn-glass" href="#jarayon">Qanday ishlaydi</a>
+          </div>
+          <p class="hero-note fade" style="animation-delay:1s"><svg width="18" height="18"><use href="#i-check"/></svg>Manba topilmasa — ochiq aytadi. Modda va havola to‘qimaydi.</p>
+        </div>
+
+        <div class="stage fade" style="animation-delay:.4s" aria-hidden="true">
+          <div class="phone">
+            <div class="screen">
+              <div class="island"></div>
+              <div class="app-head"><span class="mark"><img src="logo.png" alt=""></span>AI huquqshunos</div>
+              <div class="chat">
+                <div class="bubble-u">Ish beruvchi meni ogohlantirmasdan ishdan bo‘shatdi. Nima qilishim mumkin?</div>
+                <div class="answer">
+                  <div class="ai-badge"><i>✦</i>Huquqchi AI</div>
+                  Ish beruvchi mehnat shartnomasini bekor qilishdan oldin <b>xodimni yozma ogohlantirishi</b> shart.
+                  <div class="cite"><strong>Mehnat kodeksi</strong><em>Rasmiy matn · tahrir sanasi bilan</em></div>
+                  <ul class="steps"><li>Buyruq nusxasini so‘rang</li><li>Muddatlarni tekshiring</li></ul>
+                </div>
+                <div class="answer" style="width:96px;padding:10px 12px"><span class="typing"><b></b><b></b><b></b></span></div>
+              </div>
+              <div class="composer"><span>Savolingizni yozing…</span><i><svg width="14" height="14"><use href="#i-up"/></svg></i></div>
+            </div>
+          </div>
+
+          <div class="float f1 glass"><span class="ico lapis"><svg><use href="#i-book"/></svg></span><div><div class="t">Manba kartasi</div><div class="s">Modda · tahrir · rasmiy havola</div></div></div>
+          <div class="float f2 glass"><span class="ico gold"><svg><use href="#i-doc"/></svg></span><div><div class="t">Ijara_shartnomasi.pdf</div><div class="s"><span class="pill check">Tekshirish kerak</span></div></div></div>
+          <div class="float f3 glass"><span class="ico teal"><svg><use href="#i-pen"/></svg></span><div><div class="t">Shartnoma loyihasi</div><div class="s">DOCX · PDF</div></div></div>
+        </div>
+      </div>
+
+      <div class="wrap" style="margin-top:clamp(48px,7vw,88px)">
+        <div class="facts glass rv">
+          <div class="fact"><b>Manbali javob</b><span>Har bir xulosa — modda va rasmiy havola bilan</span></div>
+          <div class="fact"><b>Oddiy tilda</b><span>Murakkab qonun matni tushunarli izohda</span></div>
+          <div class="fact"><b>Shaxsiy ombor</b><span>Hujjatlar saqlanadi, istalgan payt tekshiriladi</span></div>
+          <div class="fact"><b>O‘zbek tilida</b><span>Lotin yozuvida; rus va kirill — keyingi bosqichda</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── Features ──────────────────────────────────────────────────── -->
+    <section class="sec" id="imkoniyatlar" style="padding-top:0">
+      <div class="wrap">
+        <div class="sec-head rv">
+          <span class="eyebrow">Imkoniyatlar</span>
+          <h2 class="h2">Butun huquqiy yordam —<br><span class="gtx">bitta ilovada.</span></h2>
+        </div>
+
+        <div class="bento">
+          <article class="tile glass t-chat rv">
+            <span class="ico lapis"><svg><use href="#i-chat"/></svg></span>
+            <h3>AI huquqshunos</h3>
+            <p>Vaziyatingizni oddiy so‘z bilan yozing. Javob tuzilmasi doim bir xil: qisqa tushuntirish, huquqiy asos, qadamlar va xulosaga ta’sir qiladigan ma’lumotlar.</p>
+            <div class="mock split">
+              <div class="stage-list" id="stages">
+                <div class="stage-row"><span class="st"></span>Savol tahlil qilinmoqda</div>
+                <div class="stage-row"><span class="st"></span>Qonunlardan manba qidirilmoqda</div>
+                <div class="stage-row"><span class="st"></span>Javob yozilmoqda</div>
+                <div class="stage-row"><span class="st"></span>Manbalar tekshirilmoqda</div>
+              </div>
+              <div class="cite" style="margin:0"><strong>Huquqiy asos</strong><em>AI matni va rasmiy matn vizual ajratilgan. Bekor qilingan modda alohida belgilanadi.</em></div>
+            </div>
+          </article>
+
+          <article class="tile glass t-doc rv d1">
+            <span class="ico gold"><svg><use href="#i-doc"/></svg></span>
+            <h3>Hujjat tahlili</h3>
+            <p>PDF, DOCX yoki rasm yuklang — majburiyatlar, muddatlar va e’tiborli bandlar topiladi.</p>
+            <div class="mock">
+              <div class="finding"><div><div class="ft">Bir tomonlama bekor qilish</div><div class="fs">4.2-band · 2-sahifa</div></div><span class="pill high" style="margin-left:auto">Yuqori e’tibor</span></div>
+              <div class="finding"><div><div class="ft">To‘lov muddati noaniq</div><div class="fs">3.1-band</div></div><span class="pill check" style="margin-left:auto">Tekshirish kerak</span></div>
+              <div class="finding"><div><div class="ft">Rekvizitlar to‘liq emas</div><div class="fs">Yetishmayotgan ma’lumot</div></div><span class="pill info" style="margin-left:auto">Ma’lumot</span></div>
+            </div>
+          </article>
+
+          <article class="tile glass t-con rv">
+            <span class="ico teal"><svg><use href="#i-pen"/></svg></span>
+            <h3>Shartnoma ustasi</h3>
+            <p>Ijara, xizmat ko‘rsatish va oldi-sotdi shartnomalarini qadamma-qadam to‘ldiring. Bilmagan qiymatingiz bo‘sh qoladi — hech narsa o‘ylab topilmaydi.</p>
+            <div class="mock">
+              <div class="wizard" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></div>
+              <div class="field"><label>Ijaraga beruvchi</label><div>Karimov Aziz</div></div>
+              <div class="field"><label>Oylik ijara haqi</label><div class="empty">Keyinroq to‘ldiriladi</div></div>
+              <div class="exports"><span class="pill lapis">DOCX</span><span class="pill lapis">PDF</span><span class="pill ok">Loyiha saqlandi</span></div>
+            </div>
+          </article>
+
+          <article class="tile glass t-law rv d1">
+            <span class="ico ink"><svg><use href="#i-book"/></svg></span>
+            <h3>Qonunlar bazasi</h3>
+            <p>Nom, raqam, modda yoki oddiy savol bilan qidiring. Faqat tekshirilgan va yuklangan hujjatlar ko‘rsatiladi — «barcha qonunlar» deb aldamaymiz.</p>
+            <div class="mock">
+              <div class="search"><svg width="16" height="16"><use href="#i-search"/></svg>Mehnat ta’tili necha kun?</div>
+              <div class="law-row"><span class="ico lapis" style="width:30px;height:30px;border-radius:9px"><svg style="width:15px;height:15px"><use href="#i-book"/></svg></span><div><div class="lt">Konstitutsiya</div><div class="ls">Rasmiy manba · amalda</div></div></div>
+              <div class="law-row"><span class="ico lapis" style="width:30px;height:30px;border-radius:9px"><svg style="width:15px;height:15px"><use href="#i-book"/></svg></span><div><div class="lt">Mehnat kodeksi</div><div class="ls">Kodeks · oddiy tilda izoh</div></div></div>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── Roles ─────────────────────────────────────────────────────── -->
+    <section class="sec" id="rollar" style="padding-top:0">
+      <div class="wrap">
+        <div class="sec-head rv">
+          <span class="eyebrow">Kimlar uchun</span>
+          <h2 class="h2">Har kimga o‘z<br><span class="gtx">huquqiy yordamchisi.</span></h2>
+        </div>
+
+        <div class="tabs glass rv" role="tablist" aria-label="Foydalanuvchi turlari">
+          <button class="tab" role="tab" id="tab-shaxs" aria-controls="role-shaxs" aria-selected="true">Jismoniy shaxs</button>
+          <button class="tab" role="tab" id="tab-biznes" aria-controls="role-biznes" aria-selected="false" tabindex="-1">Biznes</button>
+          <button class="tab" role="tab" id="tab-yurist" aria-controls="role-yurist" aria-selected="false" tabindex="-1">Yurist<span class="soon">TEZ ORADA</span></button>
+        </div>
+
+        <div class="role active" id="role-shaxs" role="tabpanel" aria-labelledby="tab-shaxs">
+          <div class="role-copy glass">
+            <span class="eyebrow">Kundalik vaziyatlar uchun</span>
+            <h3>Haqingizni bilib, ishonch bilan harakat qiling.</h3>
+            <p class="lead" style="font-size:16.5px">Ishdan bo‘shatish, ijara, iste’molchi huquqlari, oila, mulk va meros — savolingizga qaysi qonun javob berishini ko‘ring.</p>
+            <ul class="checks">
+              <li>Javob oddiy tilda, aniq modda havolasi bilan</li>
+              <li>Ijara yoki xarid shartnomasini imzolashdan oldin tekshiring</li>
+              <li>Talabnoma va ariza loyihasini tayyorlang</li>
+            </ul>
+          </div>
+          <div class="role-visual glass">
+            <div class="mini"><span class="ico lapis"><svg><use href="#i-chat"/></svg></span><div><div class="mt">Ishdan bo‘shatish</div><div class="ms">Mehnat · 3 ta qadam</div></div><span class="pill ok">Manbali</span></div>
+            <div class="mini"><span class="ico gold"><svg><use href="#i-doc"/></svg></span><div><div class="mt">Ijara_shartnomasi.pdf</div><div class="ms">2 ta e’tiborli band</div></div><span class="pill check">Tekshirish</span></div>
+            <div class="mini"><span class="ico teal"><svg><use href="#i-pen"/></svg></span><div><div class="mt">Sotuvchiga talabnoma</div><div class="ms">Iste’molchi huquqlari</div></div><span class="pill lapis">Loyiha</span></div>
+          </div>
+        </div>
+
+        <div class="role" id="role-biznes" role="tabpanel" aria-labelledby="tab-biznes">
+          <div class="role-copy glass">
+            <span class="eyebrow">Tadbirkor va kompaniyalar uchun</span>
+            <h3>Shartnoma xavfini imzodan oldin ko‘ring.</h3>
+            <p class="lead" style="font-size:16.5px">Hamkor shartnomalari, xodimlar bilan munosabatlar, majburiyat va muddatlar — alohida biznes ish maydonida.</p>
+            <ul class="checks">
+              <li>Bir tomonlama va noaniq bandlarni topish</li>
+              <li>To‘lov, muddat va bekor qilish shartlari bir ro‘yxatda</li>
+              <li>Shaxsiy va biznes hujjatlari aralashmaydi</li>
+            </ul>
+          </div>
+          <div class="role-visual glass">
+            <div class="mini"><span class="ico ink"><svg><use href="#i-doc"/></svg></span><div><div class="mt">Yetkazib berish shartnomasi</div><div class="ms">Majburiyatlar · to‘lov · muddatlar</div></div><span class="pill high">1 yuqori</span></div>
+            <div class="mini"><span class="ico lapis"><svg><use href="#i-chat"/></svg></span><div><div class="mt">Hamkor to‘lovni kechiktirdi</div><div class="ms">Qanday choralar ko‘rish mumkin</div></div><span class="pill ok">Manbali</span></div>
+            <div class="mini"><span class="ico teal"><svg><use href="#i-pen"/></svg></span><div><div class="mt">Xizmat ko‘rsatish shartnomasi</div><div class="ms">Shablon asosida</div></div><span class="pill lapis">DOCX</span></div>
+          </div>
+        </div>
+
+        <div class="role" id="role-yurist" role="tabpanel" aria-labelledby="tab-yurist">
+          <div class="role-copy glass">
+            <span class="eyebrow">Keyingi bosqich</span>
+            <h3>Mijoz hujjatlari bilan tezroq ishlang.</h3>
+            <p class="lead" style="font-size:16.5px">Mijozning ruxsati bilan hujjatlarni ko‘rib chiqish va maslahat berish — yuristlar uchun alohida ish maydoni tayyorlanmoqda.</p>
+            <ul class="checks">
+              <li>Mijozdan ruxsat bilan hujjat olish</li>
+              <li>AI tahlilini boshlang‘ich ko‘rik sifatida ishlatish</li>
+              <li>Javobgarlik yuristda qoladi — AI yordamchi xolos</li>
+            </ul>
+          </div>
+          <div class="role-visual glass">
+            <div class="mini"><span class="ico ink"><svg><use href="#i-users"/></svg></span><div><div class="mt">Mijoz ruxsati</div><div class="ms">Faqat tanlangan hujjatlar</div></div><span class="pill info">Rejada</span></div>
+            <div class="mini"><span class="ico gold"><svg><use href="#i-doc"/></svg></span><div><div class="mt">Hujjat ko‘rigi</div><div class="ms">Topilmalar va takliflar</div></div><span class="pill info">Rejada</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── How it works ──────────────────────────────────────────────── -->
+    <section class="sec" id="jarayon" style="padding-top:0">
+      <div class="wrap">
+        <div class="sec-head rv">
+          <span class="eyebrow">Qanday ishlaydi</span>
+          <h2 class="h2">Uch qadam —<br><span class="gtx">aniq javobgacha.</span></h2>
+        </div>
+        <div class="how">
+          <div class="glass rv"><span class="num">01</span><span class="ico lapis"><svg><use href="#i-chat"/></svg></span><h3>Savol bering yoki fayl yuklang</h3><p>Matn yozing, PDF/DOCX/rasm biriktiring yoki saqlangan hujjatingizni tanlang. Kerak bo‘lsa, AI sana, joy va rolingizni aniqlashtiradi.</p></div>
+          <div class="glass rv d1"><span class="num">02</span><span class="ico gold"><svg><use href="#i-search"/></svg></span><h3>AI manbalarni tekshiradi</h3><p>Javob bazadagi qonun matniga tayanadi va manbalar qayta tekshiriladi. Asos topilmasa — «huquqiy asos tasdiqlanmadi» deb ochiq aytiladi.</p></div>
+          <div class="glass rv d2"><span class="num">03</span><span class="ico teal"><svg><use href="#i-arrow"/></svg></span><h3>Keyingi qadamni biling</h3><p>Aniq qadamlar, manbani ochish, hujjatni saqlash yoki shartnoma loyihasini tayyorlash — bir bosishda.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── Principles ────────────────────────────────────────────────── -->
+    <section class="sec" style="padding-top:0">
+      <div class="wrap">
+        <div class="dark rv">
+          <span class="eyebrow">Halollik tamoyillari</span>
+          <h2 class="h2" style="margin-top:16px">AI ishonchli bo‘lishi uchun<br><span class="gtx">u chegarasini bilishi kerak.</span></h2>
+          <div class="principles">
+            <div class="pr"><b>Manba yo‘q — to‘qima ham yo‘q</b><span>Modda yoki havola topilmasa, tizim buni ochiq aytadi va o‘ylab topmaydi.</span></div>
+            <div class="pr"><b>Soxta foizlar yo‘q</b><span>«92% xavfsiz» kabi asossiz ko‘rsatkichlar o‘rniga — topilmalar va ularning sabablari.</span></div>
+            <div class="pr"><b>Bo‘sh maydon bo‘sh qoladi</b><span>Shartnomada siz bilmagan ism, manzil yoki fakt avtomatik to‘ldirilmaydi.</span></div>
+            <div class="pr"><b>AI javobi doim belgilanadi</b><span>Rasmiy matn AI izohidan vizual ajratiladi. Muhim qarordan oldin mutaxassis bilan tekshiring.</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── Security ──────────────────────────────────────────────────── -->
+    <section class="sec" id="xavfsizlik" style="padding-top:0">
+      <div class="wrap">
+        <div class="sec-head rv">
+          <span class="eyebrow">Xavfsizlik</span>
+          <h2 class="h2">Hujjatlaringiz —<br><span class="gtx">faqat sizniki.</span></h2>
+        </div>
+        <div class="sec-grid">
+          <div class="glass rv"><span class="ico lapis"><svg><use href="#i-lock"/></svg></span><h3>Shifrlash</h3><p>Production uchun HTTPS va saqlanadigan ma’lumotlarni shifrlash rejalashtirilgan.</p></div>
+          <div class="glass rv d1"><span class="ico ink"><svg><use href="#i-shield"/></svg></span><h3>Qat’iy ruxsatlar</h3><p>Har bir so‘rov serverda tekshiriladi — boshqa hisob hujjatingiz yoki chatingizni ko‘ra olmaydi.</p></div>
+          <div class="glass rv d2"><span class="ico gold"><svg><use href="#i-cpu"/></svg></span><h3>Model o‘qitilmaydi</h3><p>Shaxsiy materiallaringiz alohida roziligingizsiz AI modelini o‘qitishga ishlatilmaydi.</p></div>
+          <div class="glass rv d3"><span class="ico teal"><svg><use href="#i-doc"/></svg></span><h3>To‘liq o‘chirish</h3><p>Asl fayl va unga bog‘liq ma’lumotlarni to‘liq o‘chirish imkoniyati ishlab chiqilmoqda.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── FAQ ───────────────────────────────────────────────────────── -->
+    <section class="sec" id="savollar" style="padding-top:0">
+      <div class="wrap">
+        <div class="sec-head center rv">
+          <span class="eyebrow">Savollar</span>
+          <h2 class="h2">Ko‘p beriladigan savollar</h2>
+        </div>
+        <div class="faq">
+          <details class="glass rv"><summary>Huquqchi yuristning o‘rnini bosadimi?</summary><p>Yo‘q. Huquqchi vaziyatingizni tushunishga, tegishli qonunni topishga va keyingi qadamni rejalashtirishga yordam beradi. Muhim qarorlar oldidan mutaxassis bilan maslahatlashing.</p></details>
+          <details class="glass rv"><summary>Javoblar qaysi manbalarga tayanadi?</summary><p>Bazaga yuklangan va tekshirilgan O‘zbekiston qonun hujjatlariga. Har bir manba kartasida hujjat nomi, modda, tahrir sanasi va rasmiy havola ko‘rsatiladi.</p></details>
+          <details class="glass rv"><summary>Qanday fayllarni tekshirtirsa bo‘ladi?</summary><p>PDF, DOCX, JPG va PNG. Fayl avval shaxsiy omboringizga saqlanadi; tahlil faqat siz so‘raganingizda boshlanadi.</p></details>
+          <details class="glass rv"><summary>Qanday kiraman?</summary><p>Telefon raqamingiz orqali — bir martalik tasdiqlash kodi Telegram bot orqali yuboriladi.</p></details>
+          <details class="glass rv"><summary>Ilova pullikmi?</summary><p>Bepul tarifda qonunlar qidiruvi, cheklangan chat va sinov tahlili bor. Kengaytirilgan tariflar narxi keyinroq e’lon qilinadi — to‘lovdan oldin narx, limitlar va bekor qilish tartibi ochiq ko‘rsatiladi.</p></details>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── CTA ───────────────────────────────────────────────────────── -->
+    <section class="sec" id="yuklab" style="padding-top:0">
+      <div class="wrap">
+        <div class="dark cta rv">
+          <span class="mark mark-lg" aria-hidden="true"><img src="logo.png" alt=""></span>
+          <h2 class="h2">Huquqingizni tushuning.<br><span class="gtx">Keyingi qadamni biling.</span></h2>
+          <p class="lead">Huquqchi Android va iOS uchun tayyorlanmoqda.</p>
+          <div class="stores">
+            <span class="store"><svg width="24" height="24"><use href="#i-apple"/></svg><span><small>Tez orada</small><b>App Store</b></span></span>
+            <span class="store"><svg width="22" height="22"><use href="#i-play"/></svg><span><small>Tez orada</small><b>Google Play</b></span></span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ─── Footer ──────────────────────────────────────────────────────── -->
+  <footer class="footer">
+    <div class="wrap">
+      <div class="foot glass">
+        <div>
+          <a class="logo" href="#"><span class="mark" aria-hidden="true"><img src="logo.png" alt=""></span>Huquqchi</a>
+          <p>O‘zbekiston huquqi bo‘yicha AI yordamchi. Huquqchi davlat organi emas; AI javoblari yuridik maslahat o‘rnini bosmaydi.</p>
+        </div>
+        <div>
+          <h4>Mahsulot</h4>
+          <ul><li><a href="#imkoniyatlar">Imkoniyatlar</a></li><li><a href="#rollar">Kimlar uchun</a></li><li><a href="#jarayon">Qanday ishlaydi</a></li><li><a href="#xavfsizlik">Xavfsizlik</a></li></ul>
+        </div>
+        <div>
+          <h4>Huquqiy</h4>
+          <ul><li><span>Maxfiylik siyosati — tayyorlanmoqda</span></li><li><span>Foydalanish shartlari — tayyorlanmoqda</span></li><li><a href="#savollar">Savollar</a></li></ul>
+        </div>
+      </div>
+      <div class="legal"><span>© <span id="year">2026</span> Huquqchi</span><span>Huquqingizni tushuning. Keyingi qadamni biling.</span></div>
+    </div>
+  </footer>
+
+  <script src="main.js" defer></script>
+</body>
+</html>

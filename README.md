@@ -47,6 +47,8 @@ Arxitektura va keyingi ishlar: [BACKEND_PLAN.md](BACKEND_PLAN.md).
 - `Publish container`: `main` branch va `v*` taglarda image'ni GitHub Container Registry'ga chiqaradi.
 - `Deploy to server`: GitHub Actions'dan qo‘lda ishga tushiriladi va SSH orqali serverdagi production compose stack'ni yangilaydi.
 
+Frontend `frontend/` ichidagi statik landing sahifa. Lokal ko‘rish uchun `node frontend/serve.mjs` ni ishga tushirib, `http://127.0.0.1:4173` ni oching. `node --check frontend/main.js` va `node frontend/check.mjs` bilan JS sintaksisi, ichki havolalar va lokal resurslarni tekshirish mumkin. Docker image `frontend/Dockerfile` orqali Nginx bilan quriladi. Production compose frontendni serverning `127.0.0.1:3501` manziliga chiqaradi; domen va HTTPS uchun reverse proxy keyingi bosqichda sozlanadi. Bu landing sahifa bo‘lib, hali foydalanuvchi kabineti yoki API bilan ishlaydigan veb ilova emas.
+
 Server deployi uchun GitHub `production` environment'iga `SERVER_HOST`, `SERVER_USER`, `SERVER_SSH_KEY` va `SERVER_SSH_PORT` secretlari qo‘yiladi. GHCR image shu repository'ning vaqtinchalik `GITHUB_TOKEN` tokeni bilan olinadi; alohida doimiy registry tokeni saqlanmaydi. Serverdagi `/home/deploy/huquqchi` ichida `docker-compose.production.yml` hamda `.env.example`dan yaratilgan `.env` turishi kerak.
 
 Birinchi deploydan oldin serverda `deploy/bootstrap-server.sh` bir marta bajariladi. U production secretlarini tasodifiy yaratadi, `.env` permissionini `600` qiladi va API uchun serverdagi `3500` portni tanlaydi. Keyingi deploylarda workflow compose faylini yangilaydi, `.env` esa o‘zgartirilmaydi.

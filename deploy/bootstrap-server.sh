@@ -25,8 +25,11 @@ if [[ ! -f .env ]]; then
     'TELEGRAM_BOT_TOKEN=replace-with-botfather-token' \
     'TELEGRAM_BOT_URL=https://t.me/replace_with_bot_username' \
     'API_PORT=3500' \
+    'FRONTEND_BIND=127.0.0.1' \
+    'FRONTEND_PORT=3501' \
     'HUQUQCHI_IMAGE=ghcr.io/istamovmirjahon/huquqchi:latest' \
     'HUQUQCHI_BOT_IMAGE=ghcr.io/istamovmirjahon/huquqchi-bot:latest' \
+    'HUQUQCHI_FRONTEND_IMAGE=ghcr.io/istamovmirjahon/huquqchi-frontend:latest' \
     > .env
   chmod 600 .env
   echo 'Production .env yaratildi.'
