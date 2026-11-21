@@ -329,7 +329,8 @@ a.list-item:hover { background: rgba(255,255,255,.5); border-radius: 12px; }
 .lp-links { display: flex; gap: 4px; margin-left: auto; }
 .lp-links a { padding: 8px 12px; border-radius: 10px; font-size: 14.5px; font-weight: 500; color: var(--ink-body); }
 .lp-links a:hover { background: rgba(255,255,255,.8); color: var(--ink); }
-.lp-hero { display: grid; grid-template-columns: 1.1fr .9fr; gap: 48px; align-items: center; padding-top: 72px; padding-bottom: 56px; }
+.lp-hero { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr); gap: 48px; align-items: center; padding-top: 72px; padding-bottom: 56px; }
+.lp-intro, .lp-preview { min-width: 0; }
 .lp-h1 { font-size: clamp(38px, 5.4vw, 64px); line-height: 1.04; letter-spacing: -.045em; font-weight: 700; margin: 16px 0 18px; }
 .lp-h2 { font-size: clamp(26px, 3.2vw, 38px); line-height: 1.1; letter-spacing: -.035em; font-weight: 700; margin-top: 10px; }
 .lp-lead { font-size: 17.5px; color: var(--ink-body); max-width: 600px; }
@@ -418,7 +419,7 @@ a.list-item:hover { background: rgba(255,255,255,.5); border-radius: 12px; }
   .lp.motion-ready [data-reveal], .lp.motion-ready [data-reveal].is-visible { opacity: 1; transform: none; transition: none; }
   .lp .btn, .lp .tile-ico { transition: none !important; }
 }
-@media (max-width: 960px) { .lp-hero { grid-template-columns: 1fr; padding-top: 40px; } .lp-links { display: none; } .lp-nav-bar { justify-content: space-between; } }
+@media (max-width: 960px) { .lp-hero { grid-template-columns: minmax(0, 1fr); padding-top: 40px; } .lp-links { display: none; } .lp-nav-bar { justify-content: space-between; } }
 @media (max-width: 560px) { .theme-toggle span { display: none; } .theme-toggle { width: 38px; padding: 0; } .lp-hero { gap: 26px; } .lp-route { flex-wrap: wrap; } .lp-route i { width: 12px; } .lp-preview { padding: 18px; } }
 
 /* ---- Bo'limlar (guides) --------------------------------------------------- */
