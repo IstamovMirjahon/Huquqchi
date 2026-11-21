@@ -2,6 +2,10 @@
 
 .NET 10, DDD/Clean Architecture, EF Core 10, PostgreSQL, JWT va Swagger asosidagi hackathon MVP backend.
 
+## Taqdimot
+
+[Huquqchi AI taqdimoti (PDF)](docs/Huquqchi_taqdimot.pdf) — dastur g‘oyasi, bozor, mahsulot, biznes model va jamoa haqida 8 sahifalik pitch. Taqdimotdagi ayrim imkoniyatlar rejalashtirilgan; amaldagi holat quyida yozilgan.
+
 ## Veb-platforma
 
 `frontend/` ichida React 19, TypeScript va Vite ilovasi bor. Production’da u shu repodagi API va Telegram bot bilan birga `docker-compose.production.yml` orqali ishlaydi. `https://huquqchi-ai.uz/` frontendga, shu domenning `/api/` yo‘li API’ga boradi. Frontendning `hybrid` rejimida tayyor API’lar real backendga ulanadi, qolgan modullar aniq “Backend + demo” belgisi bilan lokal demo ma’lumotlarini ishlatadi; bu modullarni production funksiyasi deb hisoblamang.
