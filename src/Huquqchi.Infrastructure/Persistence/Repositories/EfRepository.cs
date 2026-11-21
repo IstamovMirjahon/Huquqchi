@@ -28,6 +28,9 @@ internal sealed class EfRepository<T>(AppDbContext dbContext) : IRepository<T> w
     public Task<bool> AnyAsync(Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default) =>
         _set.AnyAsync(predicate, cancellationToken);
 
+    public Task<int> CountAsync(Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default) =>
+        _set.CountAsync(predicate, cancellationToken);
+
     public async Task AddAsync(T entity, CancellationToken cancellationToken = default) =>
         await _set.AddAsync(entity, cancellationToken);
     public void Remove(T entity) => _set.Remove(entity);

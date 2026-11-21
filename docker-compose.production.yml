@@ -31,6 +31,13 @@ services:
       Telegram__BotUrl: ${TELEGRAM_BOT_URL:?TELEGRAM_BOT_URL is required}
       Storage__Path: /app/storage
       Database__AutoMigrate: "true"
+      Files__PublicBaseUrl: ${FILES_PUBLIC_BASE_URL:-https://api.huquqchi.uz}
+      Files__SigningKey: ${FILES_SIGNING_KEY:-}
+      ClamAv__Host: ${CLAMAV_HOST:-}
+      ClamAv__Port: ${CLAMAV_PORT:-3310}
+      Cors__AllowedOrigins__0: ${CORS_ALLOWED_ORIGIN:-https://app.huquqchi.uz}
+      ForwardedHeaders__Enabled: ${FORWARDED_HEADERS_ENABLED:-false}
+      Sms__Enabled: "false"
     volumes:
       - huquqchi-storage:/app/storage
     ports:
