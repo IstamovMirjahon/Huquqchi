@@ -2,6 +2,21 @@
 
 .NET 10, DDD/Clean Architecture, EF Core 10, PostgreSQL, JWT va Swagger asosidagi hackathon MVP backend.
 
+## Veb-platforma
+
+`frontend/` ichida React 19, TypeScript va Vite ilovasi bor. Production’da u shu repodagi API va Telegram bot bilan birga `docker-compose.production.yml` orqali ishlaydi. `https://huquqchi-ai.uz/` frontendga, shu domenning `/api/` yo‘li API’ga boradi. Frontendning `hybrid` rejimida tayyor API’lar real backendga ulanadi, qolgan modullar aniq “Backend + demo” belgisi bilan lokal demo ma’lumotlarini ishlatadi; bu modullarni production funksiyasi deb hisoblamang.
+
+Frontendni lokal ishga tushirish va build qilish:
+
+```powershell
+cd frontend
+npm ci
+npm run dev
+npm run build
+```
+
+Frontendning batafsil qo‘llanmasi: [frontend/README.md](frontend/README.md).
+
 ## Ishga tushirish
 
 Talablar: .NET SDK 10 va Docker Desktop.

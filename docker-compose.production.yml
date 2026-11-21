@@ -31,11 +31,11 @@ services:
       Telegram__BotUrl: ${TELEGRAM_BOT_URL:?TELEGRAM_BOT_URL is required}
       Storage__Path: /app/storage
       Database__AutoMigrate: "true"
-      Files__PublicBaseUrl: ${FILES_PUBLIC_BASE_URL:-https://api.huquqchi.uz}
+      Files__PublicBaseUrl: ${FILES_PUBLIC_BASE_URL:-https://huquqchi-ai.uz}
       Files__SigningKey: ${FILES_SIGNING_KEY:-}
       ClamAv__Host: ${CLAMAV_HOST:-}
       ClamAv__Port: ${CLAMAV_PORT:-3310}
-      Cors__AllowedOrigins__0: ${CORS_ALLOWED_ORIGIN:-https://app.huquqchi.uz}
+      Cors__AllowedOrigins__0: ${CORS_ALLOWED_ORIGIN:-https://huquqchi-ai.uz}
       ForwardedHeaders__Enabled: ${FORWARDED_HEADERS_ENABLED:-false}
       Sms__Enabled: "false"
     volumes:
@@ -64,6 +64,22 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    networks: [backend]
+
+  frontend:
+    image: ${HUQUQCHI_FRONTEND_IMAGE:?HUQUQCHI_FRONTEND_IMAGE is required}
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${FRONTEND_PORT:-3501}:8080"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/health"]
+      interval: 30s
+      timeout: 3s
+      start_period: 5s
+      retries: 3
     networks: [backend]
 
 networks:

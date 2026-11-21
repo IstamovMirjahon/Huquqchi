@@ -33,6 +33,7 @@ jobs:
         env:
           API_IMAGE: ghcr.io/istamovmirjahon/huquqchi:${{ inputs.image_tag }}
           BOT_IMAGE: ghcr.io/istamovmirjahon/huquqchi-bot:${{ inputs.image_tag }}
+          FRONTEND_IMAGE: ghcr.io/istamovmirjahon/huquqchi-frontend:${{ inputs.image_tag }}
           GHCR_USER: ${{ github.actor }}
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
@@ -42,7 +43,7 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           port: ${{ secrets.SERVER_SSH_PORT || 22 }}
-          envs: API_IMAGE,BOT_IMAGE,GHCR_USER,GHCR_TOKEN,TELEGRAM_BOT_TOKEN,TELEGRAM_BOT_URL
+          envs: API_IMAGE,BOT_IMAGE,FRONTEND_IMAGE,GHCR_USER,GHCR_TOKEN,TELEGRAM_BOT_TOKEN,TELEGRAM_BOT_URL
           script: |
             set -eu
             cd /home/deploy/huquqchi
@@ -59,13 +60,21 @@ jobs:
             echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
             set_env HUQUQCHI_IMAGE "$API_IMAGE"
             set_env HUQUQCHI_BOT_IMAGE "$BOT_IMAGE"
+            set_env HUQUQCHI_FRONTEND_IMAGE "$FRONTEND_IMAGE"
             set_env TELEGRAM_BOT_TOKEN "$TELEGRAM_BOT_TOKEN"
             set_env TELEGRAM_BOT_URL "$TELEGRAM_BOT_URL"
+            set_env FILES_PUBLIC_BASE_URL 'https://huquqchi-ai.uz'
+            set_env CORS_ALLOWED_ORIGIN 'https://huquqchi-ai.uz'
             if ! grep -Eq '^OTP_HASH_KEY=.{32,}$' .env; then
               set_env OTP_HASH_KEY "$(openssl rand -hex 48)"
             fi
             chmod 600 .env
-            docker compose -f docker-compose.production.yml pull api bot
+            docker compose -f docker-compose.production.yml pull api bot frontend
+            if docker ps --format '{{.Names}}' | grep -qx 'huquqchi-frontend-frontend-1'; then
+              docker stop huquqchi-frontend-frontend-1
+            fi
             docker compose -f docker-compose.production.yml up -d --remove-orphans
             docker compose -f docker-compose.production.yml ps
             curl --fail --retry 10 --retry-delay 5 http://127.0.0.1:${API_PORT:-8080}/health
+            curl --fail --retry 10 --retry-delay 5 http://127.0.0.1:3501/health
+            curl --fail --retry 10 --retry-delay 5 http://127.0.0.1:3501/api/v1/reference/regions >/dev/null
