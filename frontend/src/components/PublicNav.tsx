@@ -1,5 +1,6 @@
 import { Link, NavLink } from 'react-router-dom'
 import { useAuth } from '../auth'
+import { ThemeToggle } from './ThemeToggle'
 
 /** Header for public pages (hero, Bo‘limlar). One menu everywhere; the logo always leads home. */
 export function PublicNav() {
@@ -17,6 +18,7 @@ export function PublicNav() {
           <NavLink to="/lawyers">Yuristlar</NavLink>
           <NavLink to="/laws">Qonunlar</NavLink>
         </nav>
+        <ThemeToggle />
         {me ? <Link to={home} className="btn btn-primary btn-sm">Kabinetga</Link> : <Link to="/login" className="btn btn-primary btn-sm">Kirish</Link>}
       </div>
     </header>

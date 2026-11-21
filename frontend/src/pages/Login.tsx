@@ -4,6 +4,7 @@ import { api, apiMode, envMode, isMock, switchMode } from '../api'
 import type { CodeRequestResult } from '../api/types'
 import { useAuth } from '../auth'
 import { Icon } from '../components/Icon'
+import { ThemeToggle } from '../components/ThemeToggle'
 import { errText } from '../components/ui'
 
 export default function Login() {
@@ -69,6 +70,7 @@ export default function Login() {
       </section>
 
       <section className="auth-form">
+        <div className="auth-theme"><ThemeToggle /></div>
         <div className="auth-card card pad-lg">
           {step === 'phone' && (
             <form className="stack-lg" onSubmit={(e) => { e.preventDefault(); requestCode() }}>

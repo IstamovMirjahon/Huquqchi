@@ -5,6 +5,7 @@ import type { Notification } from '../api/types'
 import { useAuth } from '../auth'
 import { ago } from '../lib/format'
 import { Icon } from './Icon'
+import { ThemeToggle } from './ThemeToggle'
 import { Avatar, Badge } from './ui'
 
 type Item = { to: string; icon: string; label: string; end?: boolean }
@@ -148,6 +149,7 @@ function Topbar({ onMenu }: { onMenu: () => void }) {
     <header className="topbar" ref={ref}>
       <button className="icon-btn menu-btn" onClick={onMenu} aria-label="Menyu"><Icon name="menu" /></button>
       <div className="grow" />
+      <ThemeToggle />
       {me ? (
         <>
           {!isLawyer && <Link to="/chat" className="btn btn-sm btn-ghost"><Icon name="sparkles" size={16} />AI'ga savol</Link>}

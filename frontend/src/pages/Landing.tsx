@@ -16,11 +16,21 @@ const GUIDES: [string, string, string, string][] = [
   ['huquq-organlari', 'shield', 'Politsiya va tergov', 'Chaqiruv, bayonnoma, advokat'],
 ]
 
+const SCENARIOS = [
+  { label: 'Ish haqi', icon: 'briefcase', question: 'Ish beruvchi ikki oydan beri ish haqimni bermayapti. Nima qilsam bo‘ladi?',
+    steps: ['Ish shartnomasi va to‘lov dalillarini yig‘ing', 'Ish beruvchiga yozma talab yuboring', 'Javob bo‘lmasa, vakolatli idoraga murojaat qiling'] },
+  { label: 'Ijara', icon: 'home', question: 'Ijaraga beruvchi garov pulimni qaytarmayapti. Qanday yo‘l tutaman?',
+    steps: ['Shartnoma va to‘lov qaydlarini tekshiring', 'Garov qaytarilishi haqida yozma talab yuboring', 'Kelishuv bo‘lmasa, huquqiy yordam oling'] },
+  { label: 'Aliment', icon: 'family', question: 'Farzandim uchun aliment undirishni qanday boshlayman?',
+    steps: ['Kerakli shaxsiy hujjatlarni tayyorlang', 'Talabni rasmiy tartibda rasmiylashtiring', 'Ijro tartibi va muddatlarini kuzating'] },
+] as const
+
 /** Public hero page for guests (signed-in users go straight to their dashboard). */
 export default function Landing() {
   const { me, ready } = useAuth()
   const nav = useNavigate()
   const [q, setQ] = useState('')
+  const [scenario, setScenario] = useState(0)
   const pageRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -52,9 +62,12 @@ export default function Landing() {
 
       <section className="lp-wrap lp-hero">
         <div className="lp-intro">
-          <span className="eyebrow">O‘zbekiston huquqi bo‘yicha AI yordamchi</span>
+          <span className="eyebrow">Huquqiy masalada yo‘l xaritasi</span>
           <h1 className="lp-h1">Huquqingizni tushuning.<br /><span className="grad-text">Keyingi qadamni biling.</span></h1>
-          <p className="lp-lead">Savol bering yoki hujjat yuklang: AI qonun moddasi bilan javob beradi va muammoni qadamlarga bo‘ladi. Kerak bo‘lsa, tasdiqlangan yurist ishni oxirigacha olib boradi, pul esa natijadan keyin o‘tadi.</p>
+          <p className="lp-lead">Vaziyatingizni oddiy tilda yozing. Biz uni tushunarli qadamlar, hujjatlar va mavjud rasmiy manbalar bilan bir joyga jamlaymiz.</p>
+          <div className="lp-route" aria-label="Platformadan foydalanish bosqichlari">
+            <span><b>01</b> Savol</span><i /><span><b>02</b> Manba</span><i /><span><b>03</b> Harakat</span>
+          </div>
           {apiMode === 'hybrid' && <p className="banner info small" style={{ marginTop: 16 }}>Platforma sinov rejimida: kirish va ayrim hujjat xizmatlari backend bilan ishlaydi; yurist, buyurtma va to‘lov bo‘limlari hozircha demo.</p>}
           <form className="ask" onSubmit={(e) => { e.preventDefault(); if (q.trim()) ask(q) }}>
             <Icon name="sparkles" style={{ color: 'var(--lapis)', alignSelf: 'center' }} />
@@ -69,16 +82,23 @@ export default function Landing() {
           <p className="row small muted" style={{ gap: 8, marginTop: 18 }}><Icon name="checkCircle" size={17} style={{ color: 'var(--success)' }} />Manba topilmasa, ochiq aytadi: modda va havola to‘qimaydi.</p>
         </div>
 
-        <div className="lp-preview card">
-          <div className="row" style={{ gap: 8 }}><span className="badge lapis">Javob namunasi</span><span className="badge success">Demo ko‘rinishi</span></div>
-          <div className="bubble-user" style={{ marginTop: 14, fontSize: 14 }}>Ish beruvchi ikki oydan beri ish haqimni bermayapti. Nima qilsam bo‘ladi?</div>
-          <p className="small" style={{ marginTop: 14 }}>Har kim mehnati uchun haq olish huquqiga ega. Avval ish beruvchiga yozma talabnoma yuboring, javob bo‘lmasa mehnat inspeksiyasi yoki sudga murojaat qilasiz.</p>
-          <div className="citation" style={{ marginTop: 10 }}><b className="small">Manba va modda havolasi</b><div className="xs muted">Tasdiqlangan huquqiy manba mavjud bo‘lganda ko‘rsatiladi</div></div>
-          <div className="lp-steps">
-            {[['check', 'Vaziyat tahlili'], ['receiptMoney', 'Summa: 12 mln so‘m'], ['filePlus', 'Talabnoma tayyor'], ['users', 'Yurist bilan']].map(([i, t], k) => (
-              <div key={t} className={`lp-step ${k < 3 ? 'done' : ''}`}><Icon name={i} size={15} />{t}</div>
-            ))}
+        <div className="lp-preview card" aria-label="Namunaviy vaziyatlar">
+          <div className="lp-preview-head"><span className="lp-preview-mark"><Icon name="scale" size={22} /></span><div><span className="lp-preview-kicker">Vaziyatlar navigatori</span><h2>Qayerdan boshlashni bilmayapsizmi?</h2></div></div>
+          <p className="small muted">Bir mavzuni tanlang. Quyidagi yo‘l xaritasi namuna; aniq javob uchun savolingizni yuboring.</p>
+          <div className="lp-scenarios" role="tablist" aria-label="Namuna mavzular">
+            {SCENARIOS.map((s, i) => <button key={s.label} type="button" role="tab" aria-selected={scenario === i}
+              className={scenario === i ? 'active' : ''} onClick={() => setScenario(i)}><Icon name={s.icon} size={16} />{s.label}</button>)}
           </div>
+          <div className="lp-case" role="tabpanel" key={scenario}>
+            <span className="lp-case-label">Sizning savolingiz</span>
+            <p className="lp-case-question">“{SCENARIOS[scenario].question}”</p>
+            <div className="lp-case-plan"><span className="lp-case-label">Boshlang‘ich yo‘l xaritasi · namuna</span>
+              {SCENARIOS[scenario].steps.map((step, i) => <div className="lp-case-step" key={step}><b>{String(i + 1).padStart(2, '0')}</b><span>{step}</span></div>)}
+            </div>
+          </div>
+          <button type="button" className="btn btn-lapis lp-case-cta" onClick={() => ask(SCENARIOS[scenario].question)}>
+            Shu savolni davom ettirish <Icon name="arrowRight" size={17} />
+          </button>
         </div>
       </section>
 

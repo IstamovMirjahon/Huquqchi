@@ -4,8 +4,10 @@ import { BrowserRouter } from 'react-router-dom'
 import App from './App'
 import { AuthProvider } from './auth'
 import { ToastProvider } from './components/ui'
+import { initTheme } from './components/ThemeToggle'
 import './styles.css'
 
+initTheme()
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter>
