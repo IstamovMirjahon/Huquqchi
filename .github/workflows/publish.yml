@@ -55,6 +55,8 @@ jobs:
           push: true
           tags: ${{ steps.meta_bot.outputs.tags }}
           labels: ${{ steps.meta_bot.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
       - id: meta_frontend
         uses: docker/metadata-action@v5
         with:
@@ -71,7 +73,5 @@ jobs:
           push: true
           tags: ${{ steps.meta_frontend.outputs.tags }}
           labels: ${{ steps.meta_frontend.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
           cache-from: type=gha
           cache-to: type=gha,mode=max
