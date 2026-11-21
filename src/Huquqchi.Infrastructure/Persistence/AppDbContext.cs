@@ -26,6 +26,11 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<OtpChallenge> OtpChallenges => Set<OtpChallenge>();
     public DbSet<RefreshSession> RefreshSessions => Set<RefreshSession>();
     public DbSet<TelegramAccount> TelegramAccounts => Set<TelegramAccount>();
+    public DbSet<OtpDeliveryRequest> OtpDeliveryRequests => Set<OtpDeliveryRequest>();
+    public DbSet<LawyerProfile> LawyerProfiles => Set<LawyerProfile>();
+    public DbSet<StoredFile> StoredFiles => Set<StoredFile>();
+    public DbSet<NotificationPreference> NotificationPreferences => Set<NotificationPreference>();
+    public DbSet<DataExportRequest> DataExportRequests => Set<DataExportRequest>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

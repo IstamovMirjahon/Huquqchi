@@ -144,62 +144,53 @@ Muvaffaqiyatli javob: `200 OK` va `Healthy`.
 
 ### `POST /api/v1/auth/request-code`
 
-Telefon raqamini tekshiradi va kod olinadigan Telegram bot havolasini qaytaradi.
-
-Request:
+Kirishni boshlaydi. `channel`: `telegram` (default) yoki `sms`.
 
 ```json
-{
-  "phone": "+998901234567"
-}
+{ "phone": "+998901234567", "channel": "telegram" }
 ```
 
 Javob: `202 Accepted`.
 
 ```json
 {
-  "message": "Tasdiqlash kodini Telegram bot orqali oling.",
+  "message": "Tasdiqlash kodi Telegram orqali yuborildi.",
   "deliveryChannel": "telegram",
-  "telegramBotUrl": "https://t.me/huquqchi_bot"
+  "telegramBotUrl": "https://t.me/huquqchi_bot",
+  "isNewUser": true,
+  "resendAfterSeconds": 60,
+  "codeSent": true
 }
 ```
 
-Bot `/start` buyrug‘idan keyin kontakt yuborish tugmasini faqat bog‘lanmagan Telegram akkauntiga ko‘rsatadi. Faqat foydalanuvchining o‘z kontakti qabul qilinadi. Bog‘lanish PostgreSQL’da saqlanadi va keyingi `/start` buyrug‘ida telefon qayta so‘ralmaydi. Kod hash ko‘rinishida saqlanadi, 5 daqiqa amal qiladi, 5 ta noto‘g‘ri urinishdan keyin bloklanadi va muvaffaqiyatli kirishdan keyin qayta ishlatilmaydi.
+- **Telefon botga bog‘langan bo‘lsa** (`codeSent: true`): API `otp_delivery_request` outbox jadvaliga yozadi, bot worker kodni yaratib, foydalanuvchining Telegram chatiga o‘zi yuboradi. Kod bazada faqat hash ko‘rinishida saqlanadi; bot tokeni API’ga berilmaydi.
+- **Bog‘lanmagan bo‘lsa** (`codeSent: false`): foydalanuvchi `telegramBotUrl` orqali botni ochadi, `/start` bosadi va kontaktini yuboradi; bot raqamni bog‘laydi va kodni yuboradi. Keyingi safar kod avtomatik keladi.
+- `isNewUser: true` bo‘lsa frontend `verify` oldidan ism, rol va rozilikni so‘raydi.
+- Limit: 60 soniyada 1 ta, soatiga 5 ta kod. Oshsa `429` + `Retry-After`.
+- `sms` kanali provayder (Eskiz) ulanmaguncha `503 auth.channel_unavailable`.
 
-Asosiy xato kodi: `auth.invalid_phone`.
+Xato kodlari: `auth.invalid_phone`, `auth.code_rate_limited`, `auth.channel_unavailable`.
 
 ### `POST /api/v1/auth/verify`
 
-Telefon va kodni tekshiradi. Yangi telefon bo‘lsa `User`, `Workspace`, `Membership` va rozilik yozuvini yaratadi; mavjud telefon bo‘lsa mavjud hisobga token beradi.
-
-Request:
+Kodni tekshiradi. Yangi telefon bo‘lsa `User`, `Workspace`, `Membership`, rozilik va (yurist uchun) `draft` holatidagi `LawyerProfile` yaratadi. Yangi foydalanuvchi maydonlari kod sarflanishidan oldin tekshiriladi.
 
 ```json
 {
   "phone": "+998901234567",
   "code": "123456",
-  "name": "Ali Valiyev",
-  "workspaceKind": "Personal"
+  "name": "Aziza Karimova",
+  "role": "client",
+  "workspaceKind": "Personal",
+  "acceptTerms": true
 }
 ```
 
-`workspaceKind` qiymatlari: `Personal`, `Business`.
+`name` va `acceptTerms: true` faqat yangi foydalanuvchi uchun majburiy. `role`: `client` (default) yoki `lawyer`.
 
-Javob: `200 OK`.
+Javob: `200 OK` — tokenlar, `role` (`client`/`lawyer`/…) va `user` (to‘liq `GET /api/v1/me` obyekti). JWT claim’lari: `sub`, `workspace_id`, `role`, `lawyer_status` (yurist), `session_id`.
 
-```json
-{
-  "accessToken": "eyJ...",
-  "accessTokenExpiresAt": "2026-11-06T12:00:00Z",
-  "refreshToken": "random-opaque-token",
-  "refreshTokenExpiresAt": "2026-12-06T11:45:00Z",
-  "userId": "00000000-0000-0000-0000-000000000000",
-  "workspaceId": "00000000-0000-0000-0000-000000000000",
-  "role": "Owner"
-}
-```
-
-Asosiy xato kodlari: `auth.invalid_phone`, `auth.invalid_code`, `auth.code_rate_limited`.
+Xato kodlari: `auth.invalid_code` (401), `auth.code_expired` (401), `auth.code_rate_limited` (429), `auth.name_required`, `auth.terms_required`, `auth.invalid_role` (400), `auth.blocked` (403).
 
 ### `POST /api/v1/auth/refresh`
 
@@ -212,6 +203,35 @@ Muddati tugagan access token o‘rniga yangi access va refresh token juftligini 
 ### `POST /api/v1/auth/logout`
 
 Berilgan refresh tokenni bekor qiladi. Muvaffaqiyatli javob: `204 No Content`.
+
+### Sessiyalar
+
+| Method | Yo‘l | Javob |
+|---|---|---|
+| `GET` | `/api/v1/auth/sessions` | Qurilmalar: `id`, `device` («Chrome · Windows»), `ip` (maskalangan), `createdAt`, `lastActiveAt`, `isCurrent` |
+| `DELETE` | `/api/v1/auth/sessions/{id}` | `204`; topilmasa `404 auth.session_not_found` |
+| `POST` | `/api/v1/auth/logout-all` | `204`; joriy qurilmadan tashqari hammasi chiqariladi |
+
+## 7.1 Me, Files va Reference API (1-bosqich)
+
+To‘liq shartnoma: `BACKEND_API.md` §2, §3, §17. Qisqacha:
+
+| Method | Yo‘l | Izoh |
+|---|---|---|
+| `GET` | `/api/v1/me` | Profil, rol, `lawyerStatus`, workspace, tarif (`client_free`/`lawyer_free`), `usage` (Asia/Tashkent bo‘yicha), `unreadNotifications` |
+| `PATCH` | `/api/v1/me` | `name`, `email`, `language` (`uz-Latn`/`uz-Cyrl`/`ru`) — hammasi ixtiyoriy; `200` + Me |
+| `POST` | `/api/v1/me/avatar` | multipart `file`, JPG/PNG ≤ 5 MB → `{ "avatarUrl" }` |
+| `GET`/`PUT` | `/api/v1/me/notification-settings` | `channels` va `types` kalitlari; noma’lum kalit `400` |
+| `POST` | `/api/v1/me/export` | `202 { requestId, message }` (fon vazifasi Hangfire bosqichida qo‘shiladi) |
+| `DELETE` | `/api/v1/me` | `{ "confirm": "O‘CHIRISH" }` → `204`; shaxsiy ma’lumot tozalanadi, sessiyalar yopiladi |
+| `POST` | `/api/v1/files` | multipart `file` + `purpose` (`order_message`, `kyc`, `job_attachment`, `delivery`, `avatar`) → `201 FileRef` |
+| `GET` | `/api/v1/files/{id}` | `FileRef` yangi imzolangan `url` bilan (hozircha faqat egasi) |
+| `GET` 🔓 | `/api/v1/files/{id}/content?expires=&sig=` | Imzolangan havola, 5 daqiqa amal qiladi |
+| `GET` 🔓 | `/api/v1/reference/categories`, `/regions`, `/config` | 1 soat kesh |
+
+Fayl turi kengaytma va fayl imzosi (magic bytes) bo‘yicha tekshiriladi: `files.invalid_type` (415), `files.too_large` (413), `files.infected` (422). `ClamAv__Host` sozlanmagan bo‘lsa fayl `Skipped` skan holati bilan saqlanadi.
+
+Umumiy: barcha xatolar `application/problem+json` (`code`, ixtiyoriy `errors`); 120 so‘rov/daqiqa limiti (`429 common.rate_limited`); CORS `Cors:AllowedOrigins` bo‘yicha.
 
 ## 8. Profile API
 

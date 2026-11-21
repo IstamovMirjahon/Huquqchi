@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -23,7 +23,9 @@ public sealed class TestApiFactory : WebApplicationFactory<Program>
         {
             ["Database:AutoMigrate"] = "false",
             ["Otp:HashKey"] = "integration-test-otp-hash-key-not-secret",
-            ["Jwt:Key"] = "integration-test-key-is-long-enough-123456789"
+            ["Jwt:Key"] = "integration-test-key-is-long-enough-123456789",
+            ["Files:PublicBaseUrl"] = "http://localhost",
+            ["RateLimiting:PermitPerMinute"] = "10000"
         }));
         builder.ConfigureServices(services =>
         {
@@ -40,7 +42,7 @@ public sealed class TestApiFactory : WebApplicationFactory<Program>
 public sealed class TestOneTimeCodeService : IOneTimeCodeService
 {
     public Task<Result<IssuedOneTimeCode>> IssueAsync(string phone, OtpDeliveryChannel channel, long externalUserId,
-        CancellationToken cancellationToken) =>
+        CancellationToken cancellationToken, bool enforceCooldown = true) =>
         Task.FromResult(Result.Success(new IssuedOneTimeCode("111111", DateTimeOffset.UtcNow.AddMinutes(5))));
 
     public Task<Result> VerifyAsync(string phone, string code, CancellationToken cancellationToken) =>
@@ -114,9 +116,9 @@ public sealed class ApiTests(TestApiFactory factory) : IClassFixture<TestApiFact
     public async Task Auth_profile_and_document_flow_works()
     {
         var client = factory.CreateClient();
-        var verify = await client.PostAsJsonAsync("/api/v1/auth/verify", new { phone = "+998901234567", code = "111111", name = "Ali", workspaceKind = "Personal" });
+        var verify = await client.PostAsJsonAsync("/api/v1/auth/verify", new { phone = "+998901234567", code = "111111", name = "Ali", workspaceKind = "Personal", acceptTerms = true });
         verify.EnsureSuccessStatusCode();
-        var auth = await verify.Content.ReadFromJsonAsync<AuthResponse>();
+        var auth = await verify.Content.ReadFromJsonAsync<AuthResponse>(TestJson.Options);
         Assert.NotNull(auth);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", auth.AccessToken);
 
@@ -127,7 +129,7 @@ public sealed class ApiTests(TestApiFactory factory) : IClassFixture<TestApiFact
         var refreshResponse = await client.PostAsJsonAsync("/api/v1/auth/refresh",
             new { refreshToken = auth.RefreshToken });
         refreshResponse.EnsureSuccessStatusCode();
-        var refreshed = await refreshResponse.Content.ReadFromJsonAsync<AuthResponse>();
+        var refreshed = await refreshResponse.Content.ReadFromJsonAsync<AuthResponse>(TestJson.Options);
         Assert.NotNull(refreshed);
         Assert.NotEqual(auth.RefreshToken, refreshed.RefreshToken);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", refreshed.AccessToken);
@@ -156,9 +158,9 @@ public sealed class ApiTests(TestApiFactory factory) : IClassFixture<TestApiFact
         Assert.Equal(1, documents.RootElement.GetArrayLength());
 
         var secondVerify = await client.PostAsJsonAsync("/api/v1/auth/verify", new
-        { phone = "+998909999999", code = "111111", name = "Vali", workspaceKind = "Personal" });
+        { phone = "+998909999999", code = "111111", name = "Vali", workspaceKind = "Personal", acceptTerms = true });
         secondVerify.EnsureSuccessStatusCode();
-        var secondAuth = await secondVerify.Content.ReadFromJsonAsync<AuthResponse>();
+        var secondAuth = await secondVerify.Content.ReadFromJsonAsync<AuthResponse>(TestJson.Options);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", secondAuth!.AccessToken);
         Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync($"/api/v1/documents/{documentId}")).StatusCode);
 
@@ -168,6 +170,14 @@ public sealed class ApiTests(TestApiFactory factory) : IClassFixture<TestApiFact
         Assert.Equal(HttpStatusCode.Unauthorized, (await client.PostAsJsonAsync("/api/v1/auth/refresh",
             new { refreshToken = refreshed.RefreshToken })).StatusCode);
     }
+}
+
+public static class TestJson
+{
+    public static readonly JsonSerializerOptions Options = new(JsonSerializerDefaults.Web)
+    {
+        Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
+    };
 }
 
 public sealed class MemoryFileStorage : IFileStorage
@@ -212,6 +222,8 @@ public sealed class TestRepository<T>(TestUnitOfWork unitOfWork) : IRepository<T
     }
     public Task<bool> AnyAsync(Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default) =>
         Task.FromResult(Set.AsQueryable().Any(predicate));
+    public Task<int> CountAsync(Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default) =>
+        Task.FromResult(Set.AsQueryable().Count(predicate));
     public Task AddAsync(T entity, CancellationToken cancellationToken = default) { Set.Add(entity); return Task.CompletedTask; }
     public void Remove(T entity) => Set.Remove(entity);
 }
