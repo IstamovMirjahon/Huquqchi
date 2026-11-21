@@ -127,12 +127,16 @@ async function streamMessage(conversationId: string, req: T.SendMessageRequest, 
     // Current backend answers with plain JSON (no SSE yet): accept either.
     if (!(r.headers.get('content-type') ?? '').includes('event-stream')) {
       const text = await r.text()
-      const body = text ? N.normMsg(JSON.parse(text)) : null
-      if (body?.role === 'assistant') return body
-      if (body) h.onUser?.(body)
+      const payload: unknown = text ? JSON.parse(text) : null
+      // Current POST returns [userMessage, assistantMessage]; the planned API returns one message.
+      const messages = (Array.isArray(payload) ? payload : payload ? [payload] : []).map(N.normMsg)
+      const user = messages.find((m) => m.role === 'user')
+      if (user) h.onUser?.(user)
+      const answer = [...messages].reverse().find((m) => m.role === 'assistant')
+      if (answer) return answer
       const all = (await request<T.Message[]>('GET', `/api/v1/conversations/${conversationId}/messages`)).map(N.normMsg)
       const last = [...all].reverse().find((m) => m.role === 'assistant')
-      if (last && (!body || last.createdAt >= body.createdAt)) return last
+      if (last && (!user || last.createdAt >= user.createdAt)) return last
       throw new ApiError({ status: 0, code: 'chat.no_answer', detail: 'AI javobi hali kelmadi. Suhbatni birozdan keyin qayta oching.' })
     }
     const reader = r.body.getReader()
