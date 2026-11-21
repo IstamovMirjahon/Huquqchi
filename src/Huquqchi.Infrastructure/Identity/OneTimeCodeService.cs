@@ -16,20 +16,25 @@ public sealed class OneTimeCodeService(IUnitOfWork unitOfWork, IConfiguration co
         string phone,
         OtpDeliveryChannel channel,
         long externalUserId,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool enforceCooldown = true)
     {
         var normalizedPhone = PhoneNumber.Normalize(phone);
         if (normalizedPhone is null)
             return Result.Failure<IssuedOneTimeCode>(ApplicationErrors.Auth.InvalidPhone);
 
         var repository = unitOfWork.Repository<OtpChallenge>();
-        var latest = (await repository.ListAsync(
-            x => x.Phone == normalizedPhone,
-            q => q.OrderByDescending(x => x.CreatedAt),
-            cancellationToken: cancellationToken)).FirstOrDefault();
-
-        if (latest is not null && latest.CreatedAt > DateTimeOffset.UtcNow.Subtract(IssueCooldown))
-            return Result.Failure<IssuedOneTimeCode>(ApplicationErrors.Auth.CodeRateLimited);
+        if (enforceCooldown)
+        {
+            var latest = (await repository.ListAsync(
+                x => x.Phone == normalizedPhone,
+                q => q.OrderByDescending(x => x.CreatedAt),
+                cancellationToken: cancellationToken)).FirstOrDefault();
+            var cooldownEnds = latest?.CreatedAt.Add(IssueCooldown);
+            if (cooldownEnds > DateTimeOffset.UtcNow)
+                return Result.Failure<IssuedOneTimeCode>(ApplicationErrors.Auth.CodeRateLimited(
+                    Math.Max(1, (int)Math.Ceiling((cooldownEnds.Value - DateTimeOffset.UtcNow).TotalSeconds))));
+        }
 
         var hashKey = configuration["Otp:HashKey"];
         if (string.IsNullOrWhiteSpace(hashKey) || hashKey.Length < 32)
@@ -56,8 +61,9 @@ public sealed class OneTimeCodeService(IUnitOfWork unitOfWork, IConfiguration co
             asTracking: true,
             cancellationToken: cancellationToken);
         var challenge = challenges.FirstOrDefault();
-        if (challenge is null || challenge.ExpiresAt <= DateTimeOffset.UtcNow || challenge.Attempts >= MaxAttempts)
-            return Result.Failure(ApplicationErrors.Auth.InvalidCode);
+        if (challenge is null) return Result.Failure(ApplicationErrors.Auth.InvalidCode);
+        if (challenge.ExpiresAt <= DateTimeOffset.UtcNow) return Result.Failure(ApplicationErrors.Auth.CodeExpired);
+        if (challenge.Attempts >= MaxAttempts) return Result.Failure(ApplicationErrors.Auth.TooManyAttempts);
 
         var hashKey = configuration["Otp:HashKey"];
         if (string.IsNullOrWhiteSpace(hashKey) || hashKey.Length < 32)

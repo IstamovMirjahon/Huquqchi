@@ -1,30 +1,26 @@
-using System.Net.Http.Json;
 using System.Text.Json;
 using Huquqchi.Application;
 using Huquqchi.Domain;
 
 namespace Huquqchi.TelegramBot;
 
+/// <summary>
+/// Handles chat updates: links a Telegram account to a phone via a shared contact and issues a code on /start.
+/// Codes requested from the app are pushed by <see cref="OtpDeliveryWorker"/> instead.
+/// </summary>
 public sealed class TelegramOtpWorker(
-    IConfiguration configuration,
+    TelegramBotApi api,
     IServiceScopeFactory scopeFactory,
     ILogger<TelegramOtpWorker> logger) : BackgroundService
 {
-    private readonly string _token = configuration["Telegram:BotToken"]!;
-    private HttpClient? _client;
     private long _offset;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _client = new HttpClient
-        {
-            BaseAddress = new Uri($"https://api.telegram.org/bot{_token}/"),
-            Timeout = TimeSpan.FromSeconds(40)
-        };
-
+        bool available;
         try
         {
-            await EnsureBotIsAvailableAsync(stoppingToken);
+            available = await api.IsAvailableAsync(stoppingToken);
         }
         catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
         {
@@ -32,11 +28,14 @@ public sealed class TelegramOtpWorker(
         }
         catch
         {
-            // The Telegram Bot API token is part of the request URL. Do not attach the
-            // original HTTP exception to logs because it may disclose that credential.
+            available = false;
+        }
+
+        // The Bot API token is part of the request URL. Do not attach the original HTTP
+        // exception to logs because it may disclose that credential.
+        if (!available)
             throw new InvalidOperationException(
                 "Telegram bot ishga tusha olmadi. Bot tokeni va tarmoq ulanishini tekshiring.");
-        }
 
         logger.LogInformation("Huquqchi Telegram OTP bot ishga tushdi.");
 
@@ -52,36 +51,15 @@ public sealed class TelegramOtpWorker(
             }
             catch (Exception)
             {
-                // HTTP exceptions can include a request URL containing the bot token.
                 logger.LogError("Telegram update olishda xatolik. 5 soniyadan keyin qayta uriniladi.");
                 await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
             }
         }
     }
 
-    public override void Dispose()
-    {
-        _client?.Dispose();
-        base.Dispose();
-    }
-
-    private async Task EnsureBotIsAvailableAsync(CancellationToken cancellationToken)
-    {
-        using var response = await _client!.GetAsync("getMe", cancellationToken);
-        response.EnsureSuccessStatusCode();
-        using var json = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync(cancellationToken),
-            cancellationToken: cancellationToken);
-        if (!json.RootElement.GetProperty("ok").GetBoolean())
-            throw new InvalidOperationException("Telegram bot token tasdiqlanmadi.");
-    }
-
     private async Task PollAsync(CancellationToken cancellationToken)
     {
-        var path = $"getUpdates?offset={_offset}&timeout=30&allowed_updates=%5B%22message%22%5D";
-        using var response = await _client!.GetAsync(path, cancellationToken);
-        response.EnsureSuccessStatusCode();
-        using var json = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync(cancellationToken),
-            cancellationToken: cancellationToken);
+        using var json = await api.GetUpdatesAsync(_offset, cancellationToken);
         if (!json.RootElement.GetProperty("ok").GetBoolean()) return;
 
         foreach (var update in json.RootElement.GetProperty("result").EnumerateArray())
@@ -100,7 +78,8 @@ public sealed class TelegramOtpWorker(
         if (message.TryGetProperty("text", out var textElement))
         {
             var text = textElement.GetString()?.Trim();
-            if (text is "/start" or "/help")
+            // "/start login" arrives from the t.me deep link returned by request-code.
+            if (text is not null && (text == "/help" || text == "/start" || text.StartsWith("/start ", StringComparison.Ordinal)))
             {
                 if (await TryIssueForLinkedAccountAsync(chatId, senderId, cancellationToken)) return;
                 await SendContactRequestAsync(chatId, cancellationToken);
@@ -110,7 +89,7 @@ public sealed class TelegramOtpWorker(
 
         if (!message.TryGetProperty("contact", out var contact))
         {
-            await SendMessageAsync(chatId,
+            await api.SendMessageAsync(chatId,
                 "Tasdiqlash kodi olish uchun /start buyrug‘ini bosing va telefon raqamingizni yuboring.",
                 cancellationToken);
             return;
@@ -118,7 +97,7 @@ public sealed class TelegramOtpWorker(
 
         if (!contact.TryGetProperty("user_id", out var contactUserId) || contactUserId.GetInt64() != senderId)
         {
-            await SendMessageAsync(chatId,
+            await api.SendMessageAsync(chatId,
                 "Faqat o‘zingizning Telegram kontaktingizni yuborishingiz mumkin.", cancellationToken);
             return;
         }
@@ -126,7 +105,7 @@ public sealed class TelegramOtpWorker(
         var phone = PhoneNumber.Normalize(contact.GetProperty("phone_number").GetString());
         if (phone is null)
         {
-            await SendMessageAsync(chatId, "Telefon raqami formati noto‘g‘ri.", cancellationToken);
+            await api.SendMessageAsync(chatId, "Telefon raqami formati noto‘g‘ri.", cancellationToken);
             return;
         }
 
@@ -135,7 +114,7 @@ public sealed class TelegramOtpWorker(
         var linked = await accounts.LinkAsync(senderId, phone, cancellationToken);
         if (linked.IsFailure)
         {
-            await SendMessageAsync(chatId, linked.Error.Message, cancellationToken);
+            await api.SendMessageAsync(chatId, linked.Error.Message, cancellationToken);
             return;
         }
 
@@ -157,45 +136,25 @@ public sealed class TelegramOtpWorker(
         CancellationToken cancellationToken)
     {
         var otpService = scope.ServiceProvider.GetRequiredService<IOneTimeCodeService>();
-        var result = await otpService.IssueAsync(phone, OtpDeliveryChannel.Telegram, senderId,
-            cancellationToken);
+        var result = await otpService.IssueAsync(phone, OtpDeliveryChannel.Telegram, senderId, cancellationToken);
         if (result.IsFailure)
         {
-            await SendMessageAsync(chatId, result.Error.Message, cancellationToken);
+            await api.SendMessageAsync(chatId, result.Error.Message, cancellationToken);
             return;
         }
 
-        await SendMessageAsync(chatId,
-            $"Huquqchi tasdiqlash kodi: {result.Value.Code}\n\nKod 5 daqiqa amal qiladi. Uni hech kimga bermang.",
-            cancellationToken,
-            removeKeyboard: true);
+        await api.SendMessageAsync(chatId, TelegramMessages.Code(result.Value.Code), cancellationToken,
+            new { remove_keyboard = true });
     }
 
-    private Task SendContactRequestAsync(long chatId, CancellationToken cancellationToken) =>
-        PostAsync("sendMessage", new
-        {
-            chat_id = chatId,
-            text = "Huquqchi ilovasiga kirish kodini olish uchun telefon raqamingizni tasdiqlang.",
-            reply_markup = new
+    private Task<string?> SendContactRequestAsync(long chatId, CancellationToken cancellationToken) =>
+        api.SendMessageAsync(chatId,
+            "Huquqchi ilovasiga kirish kodini olish uchun telefon raqamingizni tasdiqlang.",
+            cancellationToken,
+            new
             {
                 keyboard = new[] { new[] { new { text = "📱 Telefon raqamimni yuborish", request_contact = true } } },
                 resize_keyboard = true,
                 one_time_keyboard = true
-            }
-        }, cancellationToken);
-
-    private Task SendMessageAsync(long chatId, string text, CancellationToken cancellationToken,
-        bool removeKeyboard = false) =>
-        PostAsync("sendMessage", new
-        {
-            chat_id = chatId,
-            text,
-            reply_markup = removeKeyboard ? new { remove_keyboard = true } : null
-        }, cancellationToken);
-
-    private async Task PostAsync(string method, object payload, CancellationToken cancellationToken)
-    {
-        using var response = await _client!.PostAsJsonAsync(method, payload, cancellationToken);
-        response.EnsureSuccessStatusCode();
-    }
+            });
 }
